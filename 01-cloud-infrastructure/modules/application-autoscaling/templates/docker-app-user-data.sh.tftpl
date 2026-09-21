@@ -1,0 +1,156 @@
+#!/bin/bash
+set -euxo pipefail
+exec > >(tee /var/log/user-data-app.log | logger -t user-data -s 2>/dev/console) 2>&1
+
+# FreshBox EP1 — capa App (Learner Lab)
+# Retries largos: ECR puede estar vacio al primer boot; MySQL tarda en bootstrap.
+
+dnf update -y
+dnf install -y docker
+systemctl enable --now docker
+usermod -aG docker ec2-user
+
+mkdir -p /opt/freshbox
+
+cat > /opt/freshbox/deploy.sh <<'DEPLOY'
+#!/bin/bash
+set -euo pipefail
+exec >> /var/log/freshbox-deploy.log 2>&1
+echo "=== deploy $(date -Is) ==="
+
+REGION="${aws_region}"
+ACCOUNT_ID="${aws_account_id}"
+ECR="$${ACCOUNT_ID}.dkr.ecr.$${REGION}.amazonaws.com"
+DB_HOST="${db_host}"
+DB_USER="${db_user}"
+DB_PASS="${db_password}"
+DB_NAME="${db_name}"
+
+wait_tcp() {
+  local host="$1" port="$2" tries="$3"
+  local i=1
+  while [ "$i" -le "$tries" ]; do
+    if timeout 2 bash -c "echo >/dev/tcp/$${host}/$${port}" 2>/dev/null; then
+      echo "OK $${host}:$${port}"
+      return 0
+    fi
+    echo "wait $${host}:$${port} ($${i}/$${tries})"
+    i=$((i + 1))
+    sleep 10
+  done
+  return 1
+}
+
+# 1) Login ECR (reintenta si el rol/red aun no estan listos)
+for i in $(seq 1 30); do
+  if aws ecr get-login-password --region "$${REGION}" \
+    | docker login --username AWS --password-stdin "$${ECR}"; then
+    break
+  fi
+  echo "ECR login retry $${i}/30"
+  sleep 10
+done
+
+# 2) Pull imagenes (reintenta hasta que existan en ECR tras push)
+for i in $(seq 1 60); do
+  OK=1
+  for SVC in frontend get-products create-product update-product delete-product; do
+    if ! docker pull "$${ECR}/freshbox-$${SVC}:latest"; then
+      OK=0
+    fi
+  done
+  if [ "$OK" -eq 1 ]; then
+    break
+  fi
+  echo "ECR pull retry $${i}/60 (¿ya corriste push-images-to-ecr.sh?)"
+  sleep 20
+done
+
+# 3) Esperar MySQL en capa Data
+wait_tcp "$${DB_HOST}" 3306 60 || {
+  echo "MySQL no responde en $${DB_HOST}:3306"
+  exit 1
+}
+
+docker network create freshbox-net 2>/dev/null || true
+docker rm -f frontend get-products create-product update-product delete-product 2>/dev/null || true
+
+docker run -d --name get-products --network freshbox-net --restart unless-stopped \
+  -e DB_HOST="$${DB_HOST}" -e DB_USER="$${DB_USER}" -e DB_PASS="$${DB_PASS}" \
+  -e DB_NAME="$${DB_NAME}" -e PORT=3001 \
+  "$${ECR}/freshbox-get-products:latest"
+
+docker run -d --name create-product --network freshbox-net --restart unless-stopped \
+  -e DB_HOST="$${DB_HOST}" -e DB_USER="$${DB_USER}" -e DB_PASS="$${DB_PASS}" \
+  -e DB_NAME="$${DB_NAME}" -e PORT=3002 \
+  "$${ECR}/freshbox-create-product:latest"
+
+docker run -d --name update-product --network freshbox-net --restart unless-stopped \
+  -e DB_HOST="$${DB_HOST}" -e DB_USER="$${DB_USER}" -e DB_PASS="$${DB_PASS}" \
+  -e DB_NAME="$${DB_NAME}" -e PORT=3003 \
+  "$${ECR}/freshbox-update-product:latest"
+
+docker run -d --name delete-product --network freshbox-net --restart unless-stopped \
+  -e DB_HOST="$${DB_HOST}" -e DB_USER="$${DB_USER}" -e DB_PASS="$${DB_PASS}" \
+  -e DB_NAME="$${DB_NAME}" -e PORT=3004 \
+  "$${ECR}/freshbox-delete-product:latest"
+
+# Nombres alineados con nginx.conf del ZIP original
+docker run -d --name frontend --network freshbox-net --restart unless-stopped \
+  -p 80:80 \
+  "$${ECR}/freshbox-frontend:latest"
+
+docker ps
+touch /opt/freshbox/deploy-ok
+echo "=== deploy OK $(date -Is) ==="
+DEPLOY
+
+chmod +x /opt/freshbox/deploy.sh
+
+cat > /etc/systemd/system/freshbox-deploy.service <<'UNIT'
+[Unit]
+Description=FreshBox Docker deploy from ECR
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/freshbox/deploy.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+# Reintenta cada 2 min hasta que exista /opt/freshbox/deploy-ok
+cat > /etc/systemd/system/freshbox-deploy.timer <<'TIMER'
+[Unit]
+Description=Retry FreshBox deploy until ECR+MySQL ready
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+Unit=freshbox-deploy.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
+# Wrapper: no reintentar si ya OK
+cat > /opt/freshbox/deploy-wrapper.sh <<'WRAP'
+#!/bin/bash
+if [ -f /opt/freshbox/deploy-ok ]; then
+  exit 0
+fi
+exec /opt/freshbox/deploy.sh
+WRAP
+chmod +x /opt/freshbox/deploy-wrapper.sh
+sed -i 's|ExecStart=/opt/freshbox/deploy.sh|ExecStart=/opt/freshbox/deploy-wrapper.sh|' \
+  /etc/systemd/system/freshbox-deploy.service
+
+systemctl daemon-reload
+systemctl enable freshbox-deploy.timer freshbox-deploy.service
+systemctl start freshbox-deploy.timer
+systemctl start freshbox-deploy.service || true
+
+echo "=== FreshBox App user-data completado ==="

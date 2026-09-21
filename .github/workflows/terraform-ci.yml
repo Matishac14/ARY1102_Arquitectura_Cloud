@@ -1,0 +1,69 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    paths:
+      - "00-terraform-state/**"
+      - "01-cloud-infrastructure/**"
+      - ".github/workflows/terraform-ci.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "00-terraform-state/**"
+      - "01-cloud-infrastructure/**"
+      - ".github/workflows/terraform-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-bootstrap:
+    name: Validate 00-terraform-state
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 00-terraform-state
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: terraform init (no backend)
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate
+
+  validate-infra:
+    name: Validate 01-cloud-infrastructure
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-cloud-infrastructure
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: terraform init (no backend)
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate

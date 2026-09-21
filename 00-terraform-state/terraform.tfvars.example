@@ -1,0 +1,4 @@
+aws_region        = "us-east-1"
+# Reemplaza ACCOUNT_ID por tu Account Id del lab (aws sts get-caller-identity)
+state_bucket_name = "freshbox-ep1-tfstate-ACCOUNT_ID"
+lock_table_name   = "freshbox-ep1-terraform-locks"

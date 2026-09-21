@@ -1,0 +1,275 @@
+name: Deploy Lab (semi-auto)
+
+# Despliegue al Learner Lab solo con clic manual.
+# Requiere Environment "clases" con Secrets AWS (+ Session Token).
+#
+# Setup:
+#   Settings → Environments → New environment: clases
+#   Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
+#   Variables (repo o environment): AWS_REGION, TF_STATE_BUCKET, TF_LOCK_TABLE
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Accion a ejecutar"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - full-deploy
+          - destroy
+        default: plan
+      confirm:
+        description: "Escribe DEPLOY para apply/full-deploy, o DESTROY para destroy"
+        required: true
+        type: string
+        default: ""
+      skip_images:
+        description: "En full-deploy, omitir build/push de imagenes"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-clases
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  TF_VAR_FILE: environments/clases/terraform.tfvars
+  WORKING_DIR: 01-cloud-infrastructure
+
+jobs:
+  guard:
+    name: Validar confirmacion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar confirmacion segun accion
+        env:
+          ACTION: ${{ inputs.action }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          case "$ACTION" in
+            plan)
+              echo "plan no requiere confirmacion especial"
+              ;;
+            apply|full-deploy)
+              if [ "$CONFIRM" != "DEPLOY" ]; then
+                echo "::error::Para $ACTION debes escribir exactamente: DEPLOY"
+                exit 1
+              fi
+              ;;
+            destroy)
+              if [ "$CONFIRM" != "DESTROY" ]; then
+                echo "::error::Para destroy debes escribir exactamente: DESTROY"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Accion desconocida: $ACTION"
+              exit 1
+              ;;
+          esac
+
+  terraform:
+    name: Terraform ${{ inputs.action }}
+    needs: guard
+    runs-on: ubuntu-latest
+    environment: clases
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar variables de backend
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TF_STATE_BUCKET:-}" ] || [ -z "${TF_LOCK_TABLE:-}" ]; then
+            echo "::error::Configura Variables TF_STATE_BUCKET y TF_LOCK_TABLE (tras bootstrap 00-terraform-state)"
+            exit 1
+          fi
+          echo "bucket=$TF_STATE_BUCKET table=$TF_LOCK_TABLE region=$AWS_REGION"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar identidad (token vigente)
+        run: |
+          set -euo pipefail
+          if ! aws sts get-caller-identity; then
+            echo "::error::Credenciales invalidas o Session Token expirado. Actualiza Secrets del Environment clases desde AWS Details del lab."
+            exit 1
+          fi
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Generar backend.hcl
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+        run: |
+          cat > backend.hcl <<EOF
+          bucket         = "${TF_STATE_BUCKET}"
+          key            = "clases/01-cloud-infrastructure/terraform.tfstate"
+          region         = "${AWS_REGION}"
+          dynamodb_table = "${TF_LOCK_TABLE}"
+          encrypt        = true
+          EOF
+          cat backend.hcl
+
+      - name: terraform init
+        run: terraform init -reconfigure -backend-config=backend.hcl -input=false
+
+      - name: Seleccionar workspace clases
+        run: |
+          set -euo pipefail
+          if terraform workspace list | grep -qE '(^|\*)[[:space:]]*clases$'; then
+            terraform workspace select clases
+          else
+            terraform workspace new clases
+          fi
+          terraform workspace show
+
+      - name: terraform plan
+        if: inputs.action == 'plan' || inputs.action == 'apply' || inputs.action == 'full-deploy'
+        run: terraform plan -var-file="${TF_VAR_FILE}" -input=false -out=tfplan
+
+      - name: terraform apply
+        if: inputs.action == 'apply' || inputs.action == 'full-deploy'
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: terraform destroy
+        if: inputs.action == 'destroy'
+        run: terraform destroy -var-file="${TF_VAR_FILE}" -input=false -auto-approve
+
+      - name: Publicar outputs
+        if: inputs.action == 'apply' || inputs.action == 'full-deploy' || inputs.action == 'plan'
+        id: outs
+        run: |
+          set -euo pipefail
+          if [ -f terraform.tfstate ] || terraform state pull >/dev/null 2>&1; then
+            echo "alb_url=$(terraform output -raw alb_url 2>/dev/null || echo n/a)" >> "$GITHUB_OUTPUT"
+            echo "mysql_ip=$(terraform output -raw mysql_private_ip 2>/dev/null || echo n/a)" >> "$GITHUB_OUTPUT"
+            terraform output || true
+          fi
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "Accion: ${{ inputs.action }}"
+          echo "ALB: ${{ steps.outs.outputs.alb_url }}"
+          echo "MySQL: ${{ steps.outs.outputs.mysql_ip }}"
+
+  containers:
+    name: Build/Push + Deploy App
+    needs: terraform
+    if: inputs.action == 'full-deploy'
+    runs-on: ubuntu-latest
+    environment: clases
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up QEMU (ARM64)
+        if: ${{ inputs.skip_images == false }}
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: ${{ inputs.skip_images == false }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login ECR
+        if: ${{ inputs.skip_images == false }}
+        id: ecr
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account=$ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+      - name: Build and push imagenes ARM64
+        if: ${{ inputs.skip_images == false }}
+        env:
+          ACCOUNT_ID: ${{ steps.ecr.outputs.account }}
+        run: |
+          set -euo pipefail
+          ECR="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          build_push() {
+            local repo="$1" path="$2"
+            aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 \
+              || aws ecr create-repository --repository-name "$repo" >/dev/null
+            docker buildx build --platform linux/arm64 -t "${ECR}/${repo}:latest" "$path" --push
+          }
+          build_push freshbox-frontend microservicioFrontend
+          build_push freshbox-get-products microserviciosBackend/get-products
+          build_push freshbox-create-product microserviciosBackend/create-product
+          build_push freshbox-update-product microserviciosBackend/update-product
+          build_push freshbox-delete-product microserviciosBackend/delete-product
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Reciclar ASG (deploy contenedores)
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+        working-directory: 01-cloud-infrastructure
+        run: |
+          set -euo pipefail
+          cat > backend.hcl <<EOF
+          bucket         = "${TF_STATE_BUCKET}"
+          key            = "clases/01-cloud-infrastructure/terraform.tfstate"
+          region         = "${AWS_REGION}"
+          dynamodb_table = "${TF_LOCK_TABLE}"
+          encrypt        = true
+          EOF
+          terraform init -reconfigure -backend-config=backend.hcl -input=false
+          terraform workspace select clases
+          export AWS_DEFAULT_REGION="$AWS_REGION"
+          ../03-deployment-scripts/deploy-docker-services.sh
+
+      - name: Smoke test ALB
+        working-directory: 01-cloud-infrastructure
+        run: |
+          set -euo pipefail
+          ALB=$(terraform output -raw alb_url)
+          echo "ALB=$ALB"
+          for i in $(seq 1 20); do
+            CODE=$(curl -sS -o /tmp/products.json -w "%{http_code}" --max-time 15 "$ALB/api/products" || echo 000)
+            echo "attempt $i -> HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              head -c 400 /tmp/products.json; echo
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::warning::API aun no responde 200; revisa user-data / MySQL / ECR"
+          exit 1

@@ -1,9 +1,12 @@
 // FreshBox SpA - Frontend CRUD - EP1
-const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost' : window.location.origin;
-const API_GET = API_BASE + ':3001/api/products';
-const API_POST = API_BASE + ':3002/api/products';
-const API_PUT = API_BASE + ':3003/api/products';
-const API_DELETE = API_BASE + ':3004/api/products';
+// Local (docker compose): APIs en puertos 3001-3004
+// AWS (ALB + nginx): mismo origen /api/products (nginx enruta por metodo HTTP)
+const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_PRODUCTS = isLocal ? null : (window.location.origin + '/api/products');
+const API_GET = isLocal ? 'http://localhost:3001/api/products' : API_PRODUCTS;
+const API_POST = isLocal ? 'http://localhost:3002/api/products' : API_PRODUCTS;
+const API_PUT = isLocal ? 'http://localhost:3003/api/products' : API_PRODUCTS;
+const API_DELETE = isLocal ? 'http://localhost:3004/api/products' : API_PRODUCTS;
 
 document.addEventListener('DOMContentLoaded', cargarProductos);
 

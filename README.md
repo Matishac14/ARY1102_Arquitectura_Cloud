@@ -1,100 +1,75 @@
-# FreshBox SpA — Plataforma de Catalogo Online (EP1)
+# FreshBox SpA — Plataforma de Catalogo Online (EP1 / ARY1102)
 
-## Descripcion
+Basado en el ZIP oficial `desarrolloappEP1` + Terraform + GitHub Actions (semi-auto) para AWS Academy Learner Lab.
 
-Aplicacion CRUD de productos organicos para FreshBox SpA. Arquitectura de 3 capas con EC2 + Docker + MySQL, alta disponibilidad Multi-AZ con ALB y Auto Scaling.
-
-## Arquitectura EP1 (3 Capas - EC2 + Docker)
-
-| Capa | Componente | Servicio AWS |
-|------|-----------|--------------|
-| Publica | ALB | Application Load Balancer |
-| Privada APP | 2x EC2 t4g.small + Docker (5 contenedores) | EC2 Multi-AZ |
-| Privada DATA | EC2 t4g.small + MySQL | EC2 + AWS Backup |
-| Registro | 5 imagenes Docker | Amazon ECR |
-| Seguridad | Firewalls por capa | Security Groups |
-
-## Microservicios (5 contenedores Docker)
-
-| Contenedor | Puerto | Endpoint | Metodo |
-|------------|--------|----------|--------|
-| frontend | 80 | / | - |
-| get-products | 3001 | /api/products | GET |
-| create-product | 3002 | /api/products | POST |
-| update-product | 3003 | /api/products/:id | PUT |
-| delete-product | 3004 | /api/products/:id | DELETE |
-
-## Estructura de Archivos
+## Arquitectura
 
 ```
-desarrolloappEP1/
-├── README.md
-├── docker-compose.yml              (prueba local)
-├── init.sql                        (BD freshbox + 5 productos organicos)
-├── microservicioFrontend/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   ├── index.html
-│   ├── css/styles.css
-│   └── js/app.js
-├── microserviciosBackend/
-│   ├── get-products/  (Dockerfile, package.json, index.js)
-│   ├── create-product/
-│   ├── update-product/
-│   └── delete-product/
-└── scripts/
-    ├── user-data-ec2.sh
-    ├── ecr-push.sh
-    ├── deploy-containers.sh
-    └── guia-docente-ep1.md         (guia paso a paso - referencia docente)
+Internet → ALB (public) → ASG EC2+Docker (private app, Multi-AZ)
+                              ↓
+                         EC2 MariaDB (private data) + AWS Backup
 ```
 
-## Variables de Entorno
+State remoto: S3 + DynamoDB (`00-terraform-state`) · Workspace: `clases`
 
-| Variable | Valor local | Valor AWS |
-|----------|-------------|-----------|
-| DB_HOST | db | (IP privada EC2 MySQL) |
-| DB_USER | alumno | alumno |
-| DB_PASS | alumno123 | alumno123 |
-| DB_NAME | freshbox | freshbox |
-| DB_PORT | 3306 | 3306 |
+## GitHub Actions (semi-automatico)
 
-## Datos de Prueba
+Detalle: [`.github/README.md`](.github/README.md)
 
-5 productos organicos FreshBox:
-1. Manzana organica 1kg
-2. Lechuga hidroponica
-3. Granola artesanal 500g
-4. Jugo natural naranja 1L
-5. Mix frutos secos 250g
-
-## Prueba Local
+1. Bootstrap state (una vez, local):
 
 ```bash
-cd desarrolloappEP1/
-docker compose build
-docker compose up -d
-docker compose ps
+export AWS_PROFILE=clases
+cd 00-terraform-state
+cp terraform.tfvars.example terraform.tfvars   # pon tu Account ID en el bucket
+terraform init && terraform apply
 ```
 
-- Frontend: http://localhost:8080
-- API: http://localhost:3001/api/products
+2. En GitHub → Settings → Environments → **`clases`**:
+   - **Secrets:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
+   - **Variables:** `AWS_REGION`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`
 
-## Pruebas CRUD (PowerShell)
+3. Actions → **Deploy Lab (semi-auto)** → Run workflow:
+   - `plan` (sin confirm especial)
+   - `apply` + confirm `DEPLOY`
+   - `full-deploy` + confirm `DEPLOY` (infra + ECR + recycle ASG)
+   - `destroy` + confirm `DESTROY`
 
-```powershell
-Invoke-RestMethod http://localhost:3001/api/products
-Invoke-RestMethod -Method POST -Uri http://localhost:3002/api/products -ContentType "application/json" -Body '{"nombre":"Quinoa organica 500g","descripcion":"Quinoa premium","precio":4990,"stock":80,"categoria":"Granos"}'
-Invoke-RestMethod -Method PUT -Uri http://localhost:3003/api/products/1 -ContentType "application/json" -Body '{"nombre":"Manzana organica 2kg","descripcion":"Manzana roja premium","precio":5990,"stock":60,"categoria":"Frutas"}'
-Invoke-RestMethod -Method DELETE -Uri http://localhost:3004/api/products/6
-```
+Renueva el **Session Token** en Secrets cada vez que abras el lab.
 
-## Detener
+CI en PRs: **Terraform CI** (`fmt` + `validate`, sin AWS).
+
+## Arranque local (alternativa)
 
 ```bash
-docker compose down -v
+export AWS_PROFILE=clases
+./03-deployment-scripts/recreate-from-zero.sh
 ```
 
----
+O manual:
 
-2026 - Disenador: Ignacio A. Pastenet M.
+```bash
+cd 01-cloud-infrastructure
+cp backend.hcl.example backend.hcl   # edita bucket/table
+terraform init -reconfigure -backend-config=backend.hcl
+terraform workspace select clases || terraform workspace new clases
+terraform apply -var-file=environments/clases/terraform.tfvars
+cd ..
+./03-deployment-scripts/push-images-to-ecr.sh
+./03-deployment-scripts/deploy-docker-services.sh
+```
+
+## Prueba local (ZIP)
+
+```bash
+docker compose up -d --build
+# http://localhost:8080
+```
+
+## Cerrar lab
+
+```bash
+# Local o workflow destroy + confirm DESTROY
+cd 01-cloud-infrastructure
+terraform destroy -var-file=environments/clases/terraform.tfvars
+```
