@@ -2,12 +2,13 @@
 
 Automatización **semi-manual** para el Learner Lab: nada se aplica solo con un `git push` a `main` (protege presupuesto).
 
-## Workflows
+## Workflow
 
 | Workflow | Cuándo corre | Qué hace |
 |----------|--------------|----------|
-| **Terraform CI** | PR / push (cambios TF) | `fmt` + `validate` + cache de providers. **Sin AWS.** |
 | **Deploy Lab (semi-auto)** | Solo clic manual (`workflow_dispatch`) | plan / apply / full-deploy / images-only / destroy |
+
+No hay CI automático en push: el lab se protege exigiendo confirmación (`DEPLOY` / `DESTROY`).
 
 ## Orden correcto (primera vez)
 

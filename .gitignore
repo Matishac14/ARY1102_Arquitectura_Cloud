@@ -22,3 +22,9 @@ credentials
 aws-credentials*
 .tmp-orig-ep1/
 .DS_Store
+
+# Entregables académicos locales (no van al remoto)
+documentos/
+*.docx
+*.pdf
+~$*

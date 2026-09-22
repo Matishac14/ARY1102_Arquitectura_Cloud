@@ -63,8 +63,9 @@ flowchart TB
 | `02-container-images/` | Notas de imágenes |
 | `03-deployment-scripts/` | Scripts locales (push, deploy, validate) |
 | `04-architecture-evidence/` | Diagramas + checklist de evidencia EP1 |
-| `.github/workflows/` | CI + Deploy Lab semi-auto |
-| `documentos/` | Informe técnico EP1 (Word/PDF) |
+| `.github/workflows/` | Deploy Lab semi-auto (manual) |
+
+El informe Word/PDF se entrega por separado (carpeta local `documentos/`, fuera del remoto).
 
 ## Despliegue recomendado (GitHub)
 
