@@ -83,8 +83,9 @@ variable "asg_desired_capacity" {
 }
 
 variable "root_volume_size_gb" {
-  type    = number
-  default = 20
+  type        = number
+  description = "Tamaño EBS root (AMI AL2023 arm64 actual exige >= 30 GiB)"
+  default     = 30
 }
 
 variable "db_name" {

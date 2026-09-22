@@ -57,7 +57,7 @@ variable "db_password" {
 
 variable "root_volume_size_gb" {
   type    = number
-  default = 20
+  default = 30
 }
 
 variable "asg_min_size" {

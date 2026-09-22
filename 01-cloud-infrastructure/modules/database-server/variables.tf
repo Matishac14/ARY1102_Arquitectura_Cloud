@@ -28,7 +28,7 @@ variable "key_name" {
 
 variable "root_volume_size_gb" {
   type    = number
-  default = 20
+  default = 30
 }
 
 variable "db_name" {
