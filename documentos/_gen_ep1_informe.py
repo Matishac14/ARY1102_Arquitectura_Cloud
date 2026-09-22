@@ -238,13 +238,14 @@ def main():
 
     clear_body_after_cover(doc)
 
+
     add_h1(doc, "Control de Versiones y Aprobaciones")
     add_corp_table(
         doc,
         ["Versión", "Fecha", "Elaborado por", "Revisado por", "Estado"],
         [
-            ["0.9", HOY, ALUMNO, "—", "○ Borrador"],
             ["1.0", HOY, ALUMNO, "Docente ARY1102", "● Entrega EP1"],
+            ["1.1", HOY, ALUMNO, "—", "● Aclara pauta lab vs TO-BE empresarial"],
         ],
     )
 
@@ -257,7 +258,7 @@ def main():
         "1.4 Priorización de requerimientos (IE1.3.2)",
         "1.5 Comparación de modelos de nube (IE2.1.1)",
         "1.6 Justificación del modelo cloud (IE2.1.2)",
-        "1.7 Validación del diseño (IE2.2.2)",
+        "1.7 Validación del diseño (IE2.2.2) — implementación EP1 y TO-BE empresarial",
         "Conclusiones",
         "Glosario",
         "Referencias (APA 7)",
@@ -267,127 +268,117 @@ def main():
     add_h1(doc, "Introducción")
     add_p(
         doc,
-        "FreshBox SpA es una empresa de venta online de productos orgánicos y saludables con despacho "
-        "en la Región Metropolitana. El crecimiento sostenido del 40% trimestral exige modernizar la "
-        "plataforma tecnológica hacia un modelo cloud que permita administrar un catálogo online "
-        "(CRUD de productos) con alta disponibilidad, escalabilidad y costos predecibles.",
+        "FreshBox SpA comercializa productos orgánicos y saludables con despacho a domicilio en la "
+        "Región Metropolitana. El crecimiento sostenido del 40% trimestral exige modernizar la "
+        "plataforma para publicar y administrar un catálogo online (CRUD de productos). El carrito "
+        "y el procesamiento de órdenes quedan para fases posteriores.",
     )
     add_p(
         doc,
-        "Este informe técnico corresponde al Componente 1 de la Evaluación Parcial N°1 (EP1) de la "
-        "asignatura ARY1102. Se fundamenta el rol del arquitecto cloud, se aplican los seis pilares "
-        "del AWS Well-Architected Framework, se priorizan requerimientos, se justifica el modelo de "
-        "nube pública y se valida el diseño TO-BE de tres capas implementado en AWS Academy Learner Lab "
-        "mediante Infrastructure as Code (Terraform), contenedores Docker (ARM64) y despliegue "
-        "semi-automático con GitHub Actions.",
+        "Este informe corresponde al Componente 1 (encargo técnico) de la EP1 de ARY1102. El "
+        "repositorio Matishac14/ARY1102_Arquitectura_Cloud contiene la implementación demostrable "
+        "en AWS Academy Learner Lab: Terraform modular, ECR, cinco contenedores Docker ARM64, "
+        "ASG Multi-AZ, MariaDB en EC2 y GitHub Actions semi-automático.",
     )
     add_callout(
         doc,
-        "Alcance EP1",
-        "Catálogo administrable (GET/POST/PUT/DELETE). Carrito y órdenes quedan fuera de alcance "
-        "para etapas posteriores. Implementación en us-east-1 respetando límites del Learner Lab "
-        "(LabRole/LabInstanceProfile, t4g.small, sin creación de roles IAM propios).",
+        "Aclaración obligatoria para la defensa (pauta vs evolución)",
+        "La implementación de laboratorio cumple la pauta académica. El TO-BE empresarial elimina "
+        "restricciones de Learner Lab y reduce riesgo operacional mediante servicios administrados "
+        "(por ejemplo ECS/Fargate y RDS Multi-AZ). En la demo se presenta lo exigido por la pauta "
+        "(EC2+Docker, ASG 2–4, MySQL en EC2, ALB, VPC /22, seis subredes, SG por capa y CRUD vía ALB). "
+        "ECS/Fargate y RDS se explican como evolución recomendada, no como sustituto de la demo.",
     )
 
     add_h1(doc, "1.1 Fundamentación del rol del arquitecto cloud (IE1.1.2)")
     add_p(
         doc,
-        "El arquitecto cloud traduce objetivos de negocio en decisiones tecnológicas medibles. En "
-        "FreshBox, el objetivo central es sostener el crecimiento del 40% trimestral sin degradar "
-        "disponibilidad ni disparar costos fijos de infraestructura on-premises.",
+        "El arquitecto cloud traduce objetivos de negocio en una arquitectura segura, escalable, "
+        "resiliente, operable y financieramente sostenible. No solo elige servicios AWS: levanta "
+        "requerimientos, evalúa riesgos, documenta decisiones y valida valor medible. En FreshBox "
+        "debe sostener el crecimiento del 40% trimestral sin degradar el catálogo ni elevar CAPEX.",
     )
     add_h2(doc, "Responsabilidades técnicas")
     for t in [
-        "Diseñar la topología de red Multi-AZ (VPC /22, subredes públicas y privadas, IGW, NAT).",
-        "Definir segmentación de seguridad por capa (Security Groups ALB → App → Data).",
-        "Seleccionar cómputo adecuado al lab (EC2 t4g.small ARM + Docker + ASG min 2 / max 4).",
-        "Garantizar persistencia y recuperación (MariaDB en capa Data + AWS Backup 7 días).",
-        "Automatizar el despliegue (Terraform, ECR, GitHub Actions workflow_dispatch).",
+        "Diseñar VPC Multi-AZ (/22), seis subredes, IGW, NAT, ALB y Security Groups por capa.",
+        "Definir cómputo App con EC2 Amazon Linux + Docker y ASG (mín. 2 / máx. 4) según pauta EP1.",
+        "Ubicar MySQL/MariaDB en EC2 de capa Data privada, con EBS cifrado y AWS Backup.",
+        "Publicar cinco imágenes en ECR y asegurar CRUD vía ALB (frontend + cuatro APIs).",
+        "Automatizar con Terraform y despliegue semi-auto (GitHub Actions), respetando LabRole.",
     ]:
         add_p(doc, t, bullet=True)
-    add_h2(doc, "Responsabilidades estratégicas")
+    add_h2(doc, "Responsabilidades estratégicas y de gobierno")
     for t in [
-        "Alinear CAPEX→OPEX: pagar por uso del lab/cloud en lugar de comprar servidores físicos.",
-        "Priorizar time-to-market del catálogo (MVP) sin comprometer HA ni seguridad básica.",
-        "Documentar trade-offs del Learner Lab (sin OIDC/IAM custom, Session Token temporal).",
-        "Definir criterios de aceptación verificables (targets healthy, CRUD vía ALB en HTTP).",
+        "Alinear decisiones al negocio (time-to-market del catálogo, continuidad y costo controlado).",
+        "Separar claramente lo demostrable en el lab de la hoja de ruta productiva (TO-BE).",
+        "Definir criterios de aceptación: targets healthy, Multi-AZ, CRUD end-to-end ALB→EC2→MySQL.",
+        "Gobernar etiquetado, presupuestos del lab, destroy al cerrar sesión y secretos temporales.",
     ]:
         add_p(doc, t, bullet=True)
-    add_p(
-        doc,
-        "Así, cada decisión (por ejemplo un solo NAT por presupuesto del lab, o ASG en lugar de "
-        "instancias fijas) queda vinculada al negocio: crecer sin interrupciones y operar con costo "
-        "controlado.",
-    )
 
     add_h1(doc, "1.2 Pilares del Well-Architected Framework (IE1.2.1)")
     add_p(
         doc,
-        "El AWS Well-Architected Framework (WAF) organiza el diseño en seis pilares. A continuación "
-        "se describen y se vinculan al caso FreshBox SpA.",
+        "Se describen los seis pilares del AWS Well-Architected Framework y su aplicación a FreshBox, "
+        "distinguiendo lo ya implementado en el laboratorio de lo propuesto para producción.",
     )
     add_corp_table(
         doc,
-        ["Pilar", "Qué implica", "Aplicación en FreshBox EP1"],
+        ["Pilar", "En la implementación EP1 (lab)", "Evolución TO-BE empresarial"],
         [
-            ["Excelencia operativa", "Operar, monitorear y mejorar", "IaC con Terraform; deploy semi-auto (Actions); scripts validate-ep1"],
-            ["Seguridad", "Protección de datos y privilegio mínimo", "SG por capa; EBS cifrado; BD solo desde App; LabRole existente"],
-            ["Confiabilidad", "Recuperación y HA", "Multi-AZ, ALB, ASG min 2, AWS Backup 7 días"],
-            ["Eficiencia de rendimiento", "Recursos acordes a la demanda", "t4g.small ARM; contenedores; ASG hasta 4"],
-            ["Optimización de costos", "Evitar desperdicio", "1 NAT; sin HTTPS/ACM (lab); destroy al cerrar; on-demand locks"],
-            ["Sostenibilidad", "Menor impacto energético", "Graviton (ARM); apagado/destroy del lab; menos overprovisioning"],
+            ["Excelencia operativa", "Terraform, Actions, validate-ep1, recycle ASG", "CI/CD con pruebas, escaneo, rollback, runbooks"],
+            ["Seguridad", "SG por capa, EBS cifrado, BD solo desde App, LabRole", "WAF, HTTPS/ACM, Secrets Manager, CloudTrail, SSM"],
+            ["Confiabilidad", "Multi-AZ, ALB, ASG min 2, Backup 7 días", "RDS Multi-AZ, NAT por AZ, pruebas de restauración"],
+            ["Rendimiento", "t4g.small ARM, 5 contenedores, ASG hasta 4", "ECS/Fargate por servicio, autoescalado por métrica"],
+            ["Costos", "1 NAT, destroy, on-demand locks", "Presupuestos, VPC endpoints, right-sizing continuo"],
+            ["Sostenibilidad", "Graviton, menos overprovisioning", "Apagado no-prod, retención de logs adecuada"],
         ],
     )
 
     add_h1(doc, "1.3 Análisis de arquitectura según Well-Architected (IE1.2.2)")
-    add_h2(doc, "Riesgos identificados")
+    add_p(
+        doc,
+        "La arquitectura del repositorio es adecuada para demostrar los conceptos de la evaluación. "
+        "Una lectura Well-Architected identifica riesgos del lab y oportunidades de madurez productiva "
+        "sin invalidar el cumplimiento de la pauta.",
+    )
     add_corp_table(
         doc,
-        ["Pilar", "Riesgo", "Severidad"],
+        ["Pilar", "Riesgo / brecha (lab o base)", "Mejora", "Prioridad"],
         [
-            ["Seguridad", "ALB solo HTTP (sin TLS) — tráfico en claro hacia Internet", "Media (aceptable en lab)"],
-            ["Confiabilidad", "Un solo NAT: SPOF de salida a Internet/ECR desde App", "Media"],
-            ["Confiabilidad", "MySQL/MariaDB en una sola AZ (EC2 dedicado)", "Media-Alta"],
-            ["Excelencia operativa", "Session Token del lab caduca → Actions falla si no se renueva", "Alta operativa"],
-            ["Costos", "Olvidar destroy mantiene NAT/ALB/EC2 consumiendo créditos", "Alta"],
-            ["Seguridad", "SCP deniega GetBucketObjectLockConfiguration en S3 state", "Baja (operativa)"],
+            ["Confiabilidad", "MySQL en un solo EC2 (SPOF de datos)", "RDS Multi-AZ + backups automáticos (TO-BE)", "Alta"],
+            ["Confiabilidad", "Un solo NAT Gateway", "NAT por AZ o VPC endpoints (TO-BE)", "Media"],
+            ["Rendimiento", "Cinco contenedores compiten en el mismo host", "ECS/Fargate por servicio (TO-BE)", "Alta"],
+            ["Seguridad", "ALB solo HTTP (sin TLS en lab)", "HTTPS + ACM + WAF (TO-BE)", "Alta"],
+            ["Excelencia operativa", "Session Token caduca en Actions", "Renovación de Secrets; luego OIDC fuera del lab", "Alta"],
+            ["Costos", "Olvidar destroy deja NAT/ALB/EC2 encendidos", "Checklist de cierre + alarmas de presupuesto", "Alta"],
         ],
     )
-    add_h2(doc, "Oportunidades de mejora y recomendaciones")
-    for t in [
-        "Producción: añadir listener HTTPS (ACM) y redirigir HTTP→HTTPS.",
-        "Data: migrar a Amazon RDS Multi-AZ cuando el lab/curso lo permita.",
-        "Red: segundo NAT o endpoints VPC para ECR y reducir dependencia del NAT único.",
-        "Operación: alarmas CloudWatch en targets unhealthy y CPU del ASG.",
-        "CI/CD: fuera del lab, preferir OIDC a Secrets temporales.",
-    ]:
-        add_p(doc, t, bullet=True)
+    add_p(
+        doc,
+        "La mejora más importante es distinguir arquitectura didáctica (EC2+Docker+MySQL en EC2) de "
+        "arquitectura operable (ECS/Fargate + RDS). Ambas coexisten en este informe: la primera se "
+        "demuestra; la segunda se recomienda.",
+    )
 
     add_h1(doc, "1.4 Priorización de requerimientos (IE1.3.2)")
-    add_p(
-        doc,
-        "Se clasifican requerimientos funcionales (RF) y no funcionales (RNF) según impacto en el "
-        "MVP del catálogo y en el crecimiento del 40% trimestral.",
-    )
     add_corp_table(
         doc,
-        ["ID", "Requerimiento", "Tipo", "Prioridad", "Criterio"],
+        ["ID", "Requerimiento", "Tipo", "Prioridad", "Cómo se cubre en EP1 (lab)"],
         [
-            ["RF-01", "Listar productos (GET)", "Funcional", "Alta", "Core del catálogo"],
-            ["RF-02", "Crear / actualizar / eliminar productos", "Funcional", "Alta", "Administración MVP"],
-            ["RF-03", "Frontend web vía ALB", "Funcional", "Alta", "Canal de demo y negocio"],
-            ["RNF-01", "Alta disponibilidad Multi-AZ", "No funcional", "Alta", "Crecimiento sin downtime"],
-            ["RNF-02", "Escalabilidad horizontal (ASG)", "No funcional", "Alta", "Picos de tráfico"],
-            ["RNF-03", "Segmentación de red y cifrado EBS", "No funcional", "Alta", "Seguridad / cumplimiento"],
-            ["RNF-04", "Backup de base de datos (7 días)", "No funcional", "Media", "DR básico EP1"],
+            ["RF-01", "Consultar productos (GET)", "Funcional", "Alta", "get-products detrás del ALB"],
+            ["RF-02", "Crear / actualizar / eliminar", "Funcional", "Alta", "create/update/delete + frontend"],
+            ["RF-03", "Cinco contenedores Docker", "Funcional", "Alta", "frontend + 4 APIs en cada EC2 App"],
+            ["RNF-01", "HA Multi-AZ", "No funcional", "Alta", "6 subredes, ALB, ASG min 2"],
+            ["RNF-02", "Escalabilidad automática", "No funcional", "Alta", "ASG máx. 4"],
+            ["RNF-03", "Seguridad por capas + cifrado", "No funcional", "Alta", "SG ALB→App→Data; EBS encrypted"],
+            ["RNF-04", "Recuperación de datos", "No funcional", "Alta", "AWS Backup 7 días sobre EC2 BD"],
+            ["RNF-05", "Costos controlados (lab)", "No funcional", "Alta", "1 NAT; destroy; t4g.small"],
+            ["RNF-06", "Despliegues repetibles", "No funcional", "Media", "Terraform + GitHub Actions"],
             ["RF-04", "Carrito y órdenes", "Funcional", "Baja", "Fuera de alcance EP1"],
-            ["RNF-05", "HTTPS público / WAF / Shield", "No funcional", "Media", "Diferido (lab/costo)"],
+            ["RNF-07", "HTTPS / WAF / Secrets Manager", "No funcional", "Media", "Planificado en TO-BE empresarial"],
+            ["RNF-08", "Cómputo y BD administrados", "No funcional", "Media", "ECS/Fargate + RDS en TO-BE"],
         ],
-    )
-    add_p(
-        doc,
-        "La solución cloud prioriza Alta: CRUD + HA + seguridad por capas + ASG/contenedores. "
-        "Lo diferido (carrito, TLS productivo) no bloquea el valor del EP1 ni la demo.",
     )
 
     add_h1(doc, "1.5 Comparación de modelos de nube (IE2.1.1)")
@@ -395,131 +386,170 @@ def main():
         doc,
         ["Criterio", "Pública", "Privada", "Híbrida"],
         [
-            ["Costos", "OPEX, pago por uso; ideal para startup/MVP", "CAPEX alto (datacenter/HW)", "Mixto; complejidad de integración"],
-            ["Seguridad", "Responsabilidad compartida; SG/IAM maduros", "Control total físico/lógico", "Políticas duales; mayor superficie"],
-            ["Escalabilidad", "Elástica (ASG, regiones)", "Limitada por capacidad comprada", "Escalado cloud + legado on-prem"],
-            ["Ventaja FreshBox", "Time-to-market y lab Academy", "No justifica CAPEX en etapa 1", "Overengineering para catálogo MVP"],
-            ["Desventaja FreshBox", "Dependencia del proveedor / límites lab", "Inversión y lead time", "Operación más cara de sostener"],
+            ["Costos", "Baja inversión inicial; OPEX; requiere gobierno", "Alto CAPEX (HW, licencias, operación)", "Costos duplicados de integración"],
+            ["Seguridad", "Controles maduros; responsabilidad compartida", "Control físico total; todo a cargo propio", "Complejidad de políticas duales"],
+            ["Escalabilidad", "Elástica (ASG/ECS, Multi-AZ)", "Limitada por capacidad comprada", "Condicionada por enlace y distribución"],
+            ["Ventaja FreshBox", "Ideal para MVP y crecimiento 40%", "Sin ventaja clara en etapa 1", "Solo si hay legado inamovible"],
+            ["Desventaja FreshBox", "Dependencia del proveedor / límites lab", "CAPEX y lead time altos", "Mayor costo y complejidad operativa"],
         ],
     )
 
     add_h1(doc, "1.6 Justificación del modelo cloud (IE2.1.2)")
-    add_h2(doc, "Modelo seleccionado: nube pública (AWS)")
+    add_h2(doc, "Modelo seleccionado: nube pública AWS")
     add_p(
         doc,
-        "Se selecciona nube pública AWS (Learner Lab) porque permite implementar en horas una "
-        "arquitectura Multi-AZ con servicios de balanceo, registro de contenedores y backup, "
-        "alineada al enunciado EP1 y a las restricciones académicas.",
+        "Se selecciona nube pública AWS (Learner Lab para la demo; cuenta productiva para el TO-BE). "
+        "AWS ofrece VPC, ALB, EC2, ASG, ECR, Backup y, en evolución, ECS, RDS, WAF e IAM avanzado "
+        "sin construir plataforma física.",
     )
     add_h2(doc, "Justificación técnica")
     for t in [
-        "Servicios nativos: VPC, ALB, ASG, ECR, EC2, AWS Backup.",
-        "Contenedores ARM64 (Graviton) coherentes con t4g.small del lab.",
-        "IaC reproducible (Terraform workspace clases + state remoto S3/DynamoDB).",
+        "Cumple el TO-BE académico de tres capas con componentes nativos exigidos por la pauta.",
+        "Permite contenedores ARM64, Multi-AZ y balanceo sin rediseñar el dominio CRUD.",
+        "IaC (Terraform) y Actions hacen reproducible el laboratorio y preparan la madurez CI/CD.",
     ]:
         add_p(doc, t, bullet=True)
     add_h2(doc, "Justificación financiera (CAPEX → OPEX)")
     add_p(
         doc,
-        "Evitar compra de servidores, switches y UPS (CAPEX). El lab opera bajo créditos/consumo "
-        "(OPEX). Un solo NAT y destroy al cerrar sesión reducen desperdicio. La elasticidad del ASG "
-        "evita dimensionar para el pico permanente.",
+        "Se sustituye inversión en servidores y balanceadores (CAPEX) por consumo del lab/cloud (OPEX). "
+        "Servicios administrados en el TO-BE reducen horas de parches de SO/motor DB. OPEX exige "
+        "igual tagging, presupuestos y destroy: no es costo automáticamente bajo.",
     )
     add_h2(doc, "Justificación estratégica")
     add_p(
         doc,
-        "Soporta el crecimiento del 40% trimestral con HA (ALB + Multi-AZ + ASG) y deja una base "
-        "extensible (RDS, HTTPS, más microservicios) sin rehacer la red de tres capas.",
+        "FreshBox acelera el time-to-market del catálogo y deja una ruta incremental hacia carrito, "
+        "órdenes y endurecimiento (HTTPS, WAF, RDS, ECS) sin abandonar la separación por capas.",
     )
 
     add_h1(doc, "1.7 Validación del diseño (IE2.2.2)")
+    add_callout(
+        doc,
+        "Dos conceptos que no deben confundirse en la defensa",
+        "Implementación EP1 obligatoria = diseño exigido por la pauta (EC2+Docker, ASG, MySQL en EC2, "
+        "ALB, ECR, VPC /22, seis subredes, SG por capa, CRUD). TO-BE empresarial sin restricciones = "
+        "evolución recomendada (ECS/Fargate, RDS Multi-AZ, WAF, Secrets Manager, CloudWatch/CloudTrail, "
+        "CI/CD, NAT por AZ, VPC endpoints). Presentar solo ECS/RDS sin evidenciar el lab puede afectar "
+        "los indicadores de demostración (red/HA, cinco contenedores en EC2, conectividad ALB→EC2→MySQL).",
+    )
+
+    add_h2(doc, "1.7.1 Implementación EP1 obligatoria (lo que se demuestra en Academy)")
     add_p(
         doc,
-        "La arquitectura implementada cumple el TO-BE de tres capas del enunciado. Validación "
-        "teórica y evidencia de implementación en el Learner Lab:",
+        "La solución desplegada en el repositorio y validada en el Learner Lab cumple literalmente "
+        "los componentes de la pauta de presentación/demostración:",
     )
     add_corp_table(
         doc,
-        ["Criterio", "Diseño / implementación", "Estado"],
+        ["Exigencia de la pauta", "Evidencia en la implementación", "Estado"],
         [
-            ["Alta disponibilidad", "Subredes en 2 AZ; ALB; ASG min 2; health check /", "● Cumple"],
-            ["Escalabilidad", "ASG max 4; 5 contenedores Docker; imágenes en ECR ARM64", "● Cumple"],
-            ["Buenas prácticas de red", "VPC 10.0.0.0/22; 6 subredes; IGW; NAT; tablas de ruteo", "● Cumple"],
-            ["Seguridad por capas", "SG ALB:80←Internet; App:80←ALB; Data:3306←App; EBS cifrado", "● Cumple"],
-            ["Datos y DR", "EC2 MariaDB privada + AWS Backup retención 7 días", "● Cumple"],
-            ["Aplicación CRUD", "Frontend nginx + 4 APIs; CRUD vía http://ALB/api/products", "● Cumple (demo)"],
-            ["Automatización", "Terraform + GitHub Actions (plan/apply/full-deploy/images-only)", "● Cumple"],
+            ["VPC CIDR /22", "VPC 10.0.0.0/22 (Terraform module network)", "● Cumple"],
+            ["Seis subredes en dos AZ", "2 public + 2 private-app + 2 private-data", "● Cumple"],
+            ["IGW + NAT Gateway", "Routing module; 1 NAT (presupuesto lab)", "● Cumple"],
+            ["ALB público", "ALB internet-facing :80; TG health /", "● Cumple"],
+            ["EC2 Amazon Linux + Docker", "ASG t4g.small AL2023 ARM; user-data Docker", "● Cumple"],
+            ["ASG min 2 / max 4", "application-autoscaling module", "● Cumple"],
+            ["EC2 MySQL capa privada", "EC2 MariaDB en subnet data + Backup 7 días", "● Cumple"],
+            ["Cinco contenedores Docker", "frontend + get/create/update/delete en ECR", "● Cumple"],
+            ["CRUD vía ALB", "http://ALB/ y /api/products (GET/POST/PUT/DELETE)", "● Cumple"],
+            ["SG por capa", "ALB:80←Internet; App:80←ALB; Data:3306←App", "● Cumple"],
+            ["Flujo ALB → EC2 → MySQL", "Demo consola + smoke Actions / validate-ep1", "● Cumple"],
         ],
     )
-    add_h2(doc, "Diagrama lógico de capas (resumen)")
     add_p(
         doc,
-        "Internet → ALB (pública) → ASG EC2+Docker (privada App, Multi-AZ) → EC2 MariaDB "
-        "(privada Data) + AWS Backup. El detalle Mermaid del repositorio está en "
-        "04-architecture-evidence/arquitectura-freshbox.md (acompañar capturas de consola en la "
-        "defensa oral / Componente 2).",
+        "Diagrama lógico de la implementación EP1: Internet → ALB (pública) → ASG EC2+Docker "
+        "(privada App, Multi-AZ) → EC2 MariaDB (privada Data) + AWS Backup. Detalle Mermaid en "
+        "04-architecture-evidence/arquitectura-freshbox.md.",
     )
     add_callout(
         doc,
-        "Nota de diseño respecto al enunciado (puerto 443)",
-        "El enunciado sugiere 80/443 en ALB/App. En esta implementación el ALB expone solo HTTP :80 "
-        "(sin certificado ACM en el lab). La segmentación mínima ALB→App→Data y el cifrado EBS se "
-        "mantienen. Usar siempre http:// en la URL del ALB.",
+        "Nota sobre el puerto 443 del enunciado",
+        "El enunciado menciona 80/443. En el lab el ALB expone HTTP :80 (sin ACM). La segmentación "
+        "ALB→App→Data y el cifrado EBS se mantienen. En la demo se usa siempre http://.",
+    )
+
+    add_h2(doc, "1.7.2 TO-BE empresarial sin restricciones de Learner Lab")
+    add_p(
+        doc,
+        "Una vez cumplida la pauta, se recomienda evolucionar la misma topología de tres capas hacia "
+        "servicios administrados. Esta sección no reemplaza la demo; reduce riesgo operacional y "
+        "carga indiferenciada (parcheo de SO, Docker en hosts, motor DB).",
+    )
+    add_corp_table(
+        doc,
+        ["Componente EP1 (lab)", "Evolución TO-BE", "Beneficio"],
+        [
+            ["EC2 + Docker + ASG", "Amazon ECS con Fargate (5 servicios)", "Escalado por servicio; menos ops de SO"],
+            ["MySQL/MariaDB en EC2", "Amazon RDS for MySQL Multi-AZ", "Failover administrado; backups automáticos"],
+            ["1 NAT Gateway", "NAT por AZ y/o VPC endpoints (ECR, S3, logs)", "Menor SPOF de salida"],
+            ["HTTP :80", "HTTPS (ACM) + AWS WAF delante del ALB", "Cifrado en tránsito y perímetro"],
+            ["Secretos en tfvars/env", "AWS Secrets Manager + IAM Roles for Tasks", "Menos filtración de credenciales"],
+            ["Validación manual / scripts", "CI/CD con tests, escaneo de imágenes, rollback", "Excelencia operativa"],
+            ["Observabilidad básica", "CloudWatch + CloudTrail", "Detección y auditoría"],
+            ["VPC /22 (lab)", "Puede ampliarse a /16 en producción", "Espacio de direccionamiento"],
+        ],
+    )
+    add_p(
+        doc,
+        "Flujo TO-BE de validación funcional: cliente → WAF/ALB → ECS → RDS, con las mismas "
+        "operaciones CRUD. En la defensa oral se enfatiza: primero evidencia del lab (ALB→EC2→MySQL); "
+        "después se muestra el diagrama TO-BE como hoja de ruta.",
     )
 
     add_h1(doc, "Conclusiones")
     add_p(
         doc,
-        "FreshBox SpA requiere una base cloud que acompañe su crecimiento sin elevar CAPEX ni "
-        "comprometer disponibilidad. Se adoptó nube pública AWS con arquitectura de tres capas, "
-        "contenedores y automatización, aplicando el Well-Architected Framework de forma explícita "
-        "a riesgos y mejoras.",
+        "FreshBox necesita una base cloud alineada a su crecimiento. Este informe valida, en primer "
+        "lugar, la implementación EP1 exigida por la pauta: VPC /22, seis subredes, ALB, EC2+Docker "
+        "con ASG 2–4, MySQL en EC2 privada, cinco contenedores, SG por capa y CRUD vía ALB, "
+        "automatizada con Terraform y GitHub Actions en el Learner Lab.",
     )
     add_p(
         doc,
-        "La implementación en AWS Academy Learner Lab valida HA (ALB/ASG/Multi-AZ), seguridad por "
-        "capas, backup y CRUD end-to-end. Quedan como evolución natural HTTPS, RDS Multi-AZ y "
-        "observabilidad avanzada, coherentes con el roadmap del negocio más allá del EP1.",
+        "En segundo lugar, propone un TO-BE empresarial (ECS/Fargate, RDS Multi-AZ, WAF, Secrets "
+        "Manager, observabilidad y CI/CD) que elimina restricciones del lab y baja el riesgo "
+        "operacional. La frase guía de la defensa es: la implementación de laboratorio cumple la "
+        "pauta académica; el TO-BE elimina restricciones de Learner Lab y reduce riesgo mediante "
+        "servicios administrados.",
     )
 
     add_h1(doc, "Glosario")
-    add_p(
-        doc,
-        "Siglas y términos usados en este informe (expansión completa en la primera aparición en el cuerpo).",
-    )
     add_corp_table(
         doc,
         ["Término", "Significado"],
         [
-            ["ALB", "Application Load Balancer — balanceador de carga de aplicación HTTP"],
-            ["ASG", "Auto Scaling Group — grupo de autoescalado de instancias EC2"],
-            ["AZ", "Availability Zone — zona de disponibilidad dentro de una región AWS"],
-            ["CAPEX", "Capital Expenditure — gasto de capital (inversión en activos)"],
-            ["CRUD", "Create, Read, Update, Delete — operaciones básicas de datos"],
-            ["EBS", "Elastic Block Store — volúmenes de bloque para EC2"],
+            ["ALB", "Application Load Balancer — balanceador HTTP/HTTPS de aplicación"],
+            ["ASG", "Auto Scaling Group — autoescalado de instancias EC2 (pauta EP1)"],
+            ["ECS", "Elastic Container Service — orquestación de contenedores (TO-BE)"],
+            ["Fargate", "Cómputo serverless para contenedores en ECS (TO-BE)"],
+            ["RDS", "Relational Database Service — base administrada Multi-AZ (TO-BE)"],
             ["ECR", "Elastic Container Registry — registro de imágenes Docker"],
-            ["IaC", "Infrastructure as Code — infraestructura definida como código (Terraform)"],
-            ["IGW", "Internet Gateway — puerta de enlace a Internet de la VPC"],
-            ["MVP", "Minimum Viable Product — producto mínimo viable"],
-            ["NAT", "Network Address Translation — salida controlada desde subredes privadas"],
-            ["OPEX", "Operational Expenditure — gasto operacional recurrente"],
-            ["SCP", "Service Control Policy — política de control de servicios en Organizations"],
-            ["SG", "Security Group — firewall stateful a nivel de instancia/ENI"],
             ["VPC", "Virtual Private Cloud — red virtual aislada en AWS"],
-            ["WAF (AWS)", "Well-Architected Framework — marco de buenas prácticas AWS"],
-            ["AVA", "Ambiente Virtual de Aprendizaje — entorno/aula digital Duoc (concepto)"],
-            ["LMS", "Learning Management System — plataforma del aula (p. ej. Blackboard)"],
+            ["SG", "Security Group — firewall stateful por ENI/instancia"],
+            ["NAT / IGW", "Salida controlada desde privadas / puerta a Internet"],
+            ["CRUD", "Create, Read, Update, Delete"],
+            ["IaC", "Infrastructure as Code (Terraform)"],
+            ["WAF (AWS Framework)", "Well-Architected Framework — seis pilares de diseño"],
+            ["AWS WAF", "Web Application Firewall — protección perimetral (TO-BE)"],
+            ["CAPEX / OPEX", "Gasto de capital / gasto operacional"],
+            ["Learner Lab", "Entorno AWS Academy con límites (LabRole, regiones, SCP)"],
+            ["TO-BE", "Estado objetivo / arquitectura futura"],
+            ["AVA / LMS", "Aula digital (concepto) / plataforma (p. ej. Blackboard)"],
         ],
     )
 
     add_h1(doc, "Referencias")
     refs = [
-        "Amazon Web Services. (n.d.). AWS Well-Architected Framework. https://aws.amazon.com/architecture/well-architected/",
-        "Amazon Web Services. (n.d.). Auto Scaling groups. https://docs.aws.amazon.com/autoscaling/",
-        "Amazon Web Services. (n.d.). Elastic Load Balancing — Application Load Balancers. https://docs.aws.amazon.com/elasticloadbalancing/",
-        "HashiCorp. (n.d.). Terraform AWS Provider documentation. https://registry.terraform.io/providers/hashicorp/aws/latest/docs",
+        "Amazon Web Services. (s. f.). AWS Well-Architected Framework. https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html",
+        "Amazon Web Services. (s. f.). Amazon EC2 Auto Scaling. https://docs.aws.amazon.com/autoscaling/",
+        "Amazon Web Services. (s. f.). Elastic Load Balancing — Application Load Balancers. https://docs.aws.amazon.com/elasticloadbalancing/",
+        "Amazon Web Services. (s. f.). Amazon ECS. https://docs.aws.amazon.com/ecs/",
+        "Amazon Web Services. (s. f.). Amazon RDS for MySQL. https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html",
+        "HashiCorp. (s. f.). Terraform documentation. https://developer.hashicorp.com/terraform/docs",
         "Pastenet, I. A. (2026). Evaluación Parcial N°1 — ARY1102 Arquitectura Cloud (encargo estudiante). Duoc UC.",
-        "Pastenet, I. A. (2026). desarrolloappEP1 (recursos de microservicios y guía docente). Duoc UC.",
+        "Matishac14. (2026). ARY1102_Arquitectura_Cloud [Repositorio]. https://github.com/Matishac14/ARY1102_Arquitectura_Cloud",
     ]
     for r in refs:
         p = doc.add_paragraph()

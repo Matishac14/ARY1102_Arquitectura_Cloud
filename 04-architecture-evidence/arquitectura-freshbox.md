@@ -91,3 +91,8 @@ sequenceDiagram
 ## Checklist de evidencia
 
 Ver [README.md](./README.md) en esta misma carpeta (capturas consola + CRUD).
+
+## Pauta EP1 vs TO-BE empresarial
+
+En la defensa oral, **primero** demostrar la implementación del lab (EC2+Docker, ASG, MySQL en EC2, ALB→EC2→MySQL).  
+**Después**, presentar ECS/Fargate + RDS Multi-AZ como evolución TO-BE, no como sustituto de la demo.
