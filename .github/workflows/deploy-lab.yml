@@ -27,7 +27,7 @@ on:
         type: string
         default: ""
       skip_images:
-        description: "En full-deploy, omitir build/push de imagenes"
+        description: "Omitir build/push (solo si ECR ya tiene las 5 imagenes)"
         required: false
         type: boolean
         default: false
@@ -207,6 +207,9 @@ jobs:
     if: inputs.action == 'full-deploy'
     runs-on: ubuntu-latest
     environment: clases
+    # workflow_dispatch boolean a veces llega como string; no usar `== false` ni `!inputs.x`
+    env:
+      DO_BUILD: ${{ inputs.skip_images != true && inputs.skip_images != 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -218,16 +221,23 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Decidir build de imagenes
+        run: |
+          echo "skip_images_input='${{ inputs.skip_images }}' DO_BUILD='${DO_BUILD}'"
+          if [ "${DO_BUILD}" != "true" ]; then
+            echo "::warning::Build omitido (skip_images=true). ECR debe tener imagenes previas."
+          fi
+
       - name: Set up QEMU (ARM64)
-        if: ${{ inputs.skip_images == false }}
+        if: env.DO_BUILD == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        if: ${{ inputs.skip_images == false }}
+        if: env.DO_BUILD == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login ECR
-        if: ${{ inputs.skip_images == false }}
+        if: env.DO_BUILD == 'true'
         id: ecr
         run: |
           set -euo pipefail
@@ -237,7 +247,7 @@ jobs:
             | docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
       - name: Build and push imagenes ARM64
-        if: ${{ inputs.skip_images == false }}
+        if: env.DO_BUILD == 'true'
         env:
           ACCOUNT_ID: ${{ steps.ecr.outputs.account }}
         run: |
@@ -247,6 +257,7 @@ jobs:
             local repo="$1" path="$2"
             aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 \
               || aws ecr create-repository --repository-name "$repo" >/dev/null
+            echo "=== Building ${repo} ==="
             docker buildx build --platform linux/arm64 -t "${ECR}/${repo}:latest" "$path" --push
           }
           build_push freshbox-frontend microservicioFrontend
@@ -254,6 +265,12 @@ jobs:
           build_push freshbox-create-product microserviciosBackend/create-product
           build_push freshbox-update-product microserviciosBackend/update-product
           build_push freshbox-delete-product microserviciosBackend/delete-product
+          echo "=== Verificando pushes ==="
+          for r in freshbox-frontend freshbox-get-products freshbox-create-product freshbox-update-product freshbox-delete-product; do
+            n="$(aws ecr describe-images --repository-name "$r" --query 'length(imageDetails)' --output text)"
+            echo "$r: $n imagen(es)"
+            [ "$n" -ge 1 ]
+          done
 
       - uses: hashicorp/setup-terraform@v3
         with:
