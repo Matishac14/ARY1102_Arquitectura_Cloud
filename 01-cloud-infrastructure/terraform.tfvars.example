@@ -1,4 +1,6 @@
 aws_region              = "us-east-1"
+# Local: export AWS_PROFILE=clases  |  Actions: dejar vacio
+aws_profile             = ""
 project_name            = "freshbox-ep1"
 environment             = "clases"
 key_name                = "vockey"

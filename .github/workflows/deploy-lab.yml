@@ -43,6 +43,8 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
   TF_VAR_FILE: environments/clases/terraform.tfvars
   WORKING_DIR: 01-cloud-infrastructure
+  # Actions usa Secrets, no perfil ~/.aws
+  TF_VAR_aws_profile: ""
 
 jobs:
   guard:
@@ -88,17 +90,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verificar variables de backend
+      - name: Verificar variables de backend y tfvars
         env:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+          HAS_AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+          HAS_AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}
+          HAS_AWS_TOKEN: ${{ secrets.AWS_SESSION_TOKEN != '' }}
         run: |
           set -euo pipefail
           if [ -z "${TF_STATE_BUCKET:-}" ] || [ -z "${TF_LOCK_TABLE:-}" ]; then
             echo "::error::Configura Variables TF_STATE_BUCKET y TF_LOCK_TABLE (tras bootstrap 00-terraform-state)"
             exit 1
           fi
-          echo "bucket=$TF_STATE_BUCKET table=$TF_LOCK_TABLE region=$AWS_REGION"
+          if [ ! -f "${TF_VAR_FILE}" ]; then
+            echo "::error::Falta ${TF_VAR_FILE} en el repo (debe estar versionado para Actions)"
+            exit 1
+          fi
+          if [ "$HAS_AWS_KEY" != "true" ] || [ "$HAS_AWS_SECRET" != "true" ] || [ "$HAS_AWS_TOKEN" != "true" ]; then
+            echo "::error::Faltan Secrets AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN en Environment clases"
+            exit 1
+          fi
+          echo "bucket=$TF_STATE_BUCKET table=$TF_LOCK_TABLE region=$AWS_REGION tfvars=$TF_VAR_FILE"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -126,13 +139,14 @@ jobs:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
         run: |
-          cat > backend.hcl <<EOF
-          bucket         = "${TF_STATE_BUCKET}"
-          key            = "clases/01-cloud-infrastructure/terraform.tfstate"
-          region         = "${AWS_REGION}"
-          dynamodb_table = "${TF_LOCK_TABLE}"
-          encrypt        = true
-          EOF
+          set -euo pipefail
+          printf '%s\n' \
+            "bucket         = \"${TF_STATE_BUCKET}\"" \
+            "key            = \"clases/01-cloud-infrastructure/terraform.tfstate\"" \
+            "region         = \"${AWS_REGION}\"" \
+            "dynamodb_table = \"${TF_LOCK_TABLE}\"" \
+            "encrypt        = true" \
+            > backend.hcl
           cat backend.hcl
 
       - name: terraform init
@@ -241,16 +255,17 @@ jobs:
         env:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+          TF_VAR_aws_profile: ""
         working-directory: 01-cloud-infrastructure
         run: |
           set -euo pipefail
-          cat > backend.hcl <<EOF
-          bucket         = "${TF_STATE_BUCKET}"
-          key            = "clases/01-cloud-infrastructure/terraform.tfstate"
-          region         = "${AWS_REGION}"
-          dynamodb_table = "${TF_LOCK_TABLE}"
-          encrypt        = true
-          EOF
+          printf '%s\n' \
+            "bucket         = \"${TF_STATE_BUCKET}\"" \
+            "key            = \"clases/01-cloud-infrastructure/terraform.tfstate\"" \
+            "region         = \"${AWS_REGION}\"" \
+            "dynamodb_table = \"${TF_LOCK_TABLE}\"" \
+            "encrypt        = true" \
+            > backend.hcl
           terraform init -reconfigure -backend-config=backend.hcl -input=false
           terraform workspace select clases
           export AWS_DEFAULT_REGION="$AWS_REGION"

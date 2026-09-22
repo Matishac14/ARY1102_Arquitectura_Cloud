@@ -7,7 +7,10 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+# tfvars locales / secretos; el de clases SÍ se versiona (Actions lo necesita)
 terraform.tfvars
+!01-cloud-infrastructure/environments/clases/terraform.tfvars
+00-terraform-state/terraform.tfvars
 backend.hcl
 *.pem
 *.ppk

@@ -6,8 +6,8 @@ variable "aws_region" {
 
 variable "aws_profile" {
   type        = string
-  description = "Perfil AWS CLI local (ej. clases). Vacio = usa default / variables de entorno."
-  default     = "clases"
+  description = "Perfil AWS CLI local (ej. clases). Vacio = env/Secrets (requerido en GitHub Actions)."
+  default     = ""
 }
 
 variable "project_name" {

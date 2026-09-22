@@ -9,6 +9,9 @@ Crea el backend compartido para `01-cloud-infrastructure` y GitHub Actions.
 - Región: `us-east-1`
 - Bucket **globalmente único** (incluye Account ID)
 - No crea roles IAM
+- Si `terraform plan` falla con `GetBucketObjectLockConfiguration` / SCP deny:
+  el bucket ya existe; usa `terraform plan -refresh=false` o no re-apliques `00`.
+  GitHub solo necesita los nombres del bucket y la tabla.
 
 ## Uso (una vez por cuenta / si se perdió el bucket)
 

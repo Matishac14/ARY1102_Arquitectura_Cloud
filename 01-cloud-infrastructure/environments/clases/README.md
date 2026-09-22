@@ -13,7 +13,9 @@ terraform workspace show          # debe imprimir: clases
 
 ## Credenciales AWS (perfil `clases` / `default`)
 
-**No** guardes Access Key / Secret / Session Token dentro del repo. Ponlas en tu home:
+**No** guardes Access Key / Secret / Session Token dentro del repo. Ponlas en tu home
+o usa `export AWS_PROFILE=clases` (el tfvars versionado deja `aws_profile = ""` para
+que GitHub Actions use Secrets).
 
 `~/.aws/credentials`
 
@@ -46,7 +48,8 @@ export AWS_PROFILE=clases
 aws sts get-caller-identity
 ```
 
-Terraform usa `aws_profile = "clases"` desde `environments/clases/terraform.tfvars`.
+Terraform en local usa el perfil via `AWS_PROFILE=clases`. En GitHub Actions
+`aws_profile` queda vacio y se usan los Secrets del Environment.
 
 ## Aplicar con este workspace
 
