@@ -13,14 +13,36 @@ provider "aws" {
 }
 
 # ---------------------------------------------------------------------------
-# Learner Lab / AWS Academy:
-# El resource aws_s3_bucket SIEMPRE llama s3:GetBucketObjectLockConfiguration
-# en el Read del provider. El SCP del lab lo deniega (403) → apply/plan fallan
-# aunque el bucket se haya creado bien.
-#
-# Por eso el bucket S3 se crea con AWS CLI (./bootstrap-s3.sh), no con Terraform.
-# Aquí solo gestionamos el lock table (DynamoDB).
+# Restricción AWS Academy Learner Lab (SCP), no de Terraform:
+# Tras create/read, el provider AWS llama s3:GetBucketObjectLockConfiguration.
+# El SCP del lab la deniega (403). El bucket suele CREARSE igual; falla el Read.
+# Ver README.md → "Restricción Learner Lab (Object Lock)".
 # ---------------------------------------------------------------------------
+
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = var.state_bucket_name
+
+  tags = {
+    Name = var.state_bucket_name
+  }
+}
+
+resource "aws_s3_bucket_versioning" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 
 resource "aws_dynamodb_table" "terraform_locks" {
   name         = var.lock_table_name
