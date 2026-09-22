@@ -1,59 +1,50 @@
 # 00 — Bootstrap del state remoto (S3 + DynamoDB)
 
-Crea el backend compartido para `01-cloud-infrastructure` y GitHub Actions.
+> State **local** (huevo-gallina). No configures backend S3 aquí.
 
-> Este stack usa **state local** (huevo-gallina). No configures backend S3 aquí.
+## Por qué el bucket NO va en Terraform
 
-## Learner Lab
+El resource `aws_s3_bucket` del provider AWS, en cada create/read, llama a:
 
-- Región: `us-east-1`
-- Bucket **globalmente único** (incluye Account ID)
-- Stack **minimo**: bucket + versioning + public access block + DynamoDB locks
-- Si `terraform plan` falla con `GetBucketObjectLockConfiguration` / SCP deny:
-  el bucket ya existe; usa `terraform plan -refresh=false` o no re-apliques `00`.
+`s3:GetBucketObjectLockConfiguration`
 
-## Uso (una vez por cuenta)
+En AWS Academy Learner Lab esa acción tiene **Deny explícito en el SCP** →
+`terraform apply` falla con 403 **aunque el bucket se haya creado bien**.
+No se soluciona quitando attributes del `.tf`: el provider siempre hace esa lectura.
+
+**Solución:** crear el bucket con AWS CLI (`bootstrap-s3.sh`) y dejar en Terraform solo DynamoDB.
+
+## Uso (una vez)
 
 ```bash
 export AWS_PROFILE=clases
 cd 00-terraform-state
 cp terraform.tfvars.example terraform.tfvars
-# Edita state_bucket_name con tu Account ID
+# Edita state_bucket_name = "freshbox-ep1-tfstate-<ACCOUNT_ID>"
+
+chmod +x bootstrap-s3.sh
+./bootstrap-s3.sh
 
 terraform init
-terraform apply
-terraform output backend_hcl_example
-terraform output state_s3_path_hint
+terraform apply   # solo crea/actualiza la tabla de locks
+terraform output
 ```
 
-Copia el output a `../01-cloud-infrastructure/backend.hcl`.
+Si el bucket y la tabla **ya existen** (tu caso), no hace falta recrearlos:
+
+```bash
+./bootstrap-s3.sh          # idempotente (solo asegura versioning/PAB)
+terraform apply            # asegura DynamoDB en el state local
+```
 
 ### Ruta del state (workspaces)
 
-Con `key = "01-cloud-infrastructure/terraform.tfstate"` y workspace `clases`:
+`key = "01-cloud-infrastructure/terraform.tfstate"` + workspace `clases` →
 
 ```text
-s3://freshbox-ep1-tfstate-<ACCOUNT>/env:/clases/01-cloud-infrastructure/terraform.tfstate
-```
-
-**No** pongas `clases/` dentro del `key` (si no, queda `env:/clases/clases/...`).
-
-```bash
-cd ../01-cloud-infrastructure
-terraform init -reconfigure -backend-config=backend.hcl
-terraform workspace select clases || terraform workspace new clases
+s3://…/env:/clases/01-cloud-infrastructure/terraform.tfstate
 ```
 
 ## GitHub
 
-## Si el state local de `00` aún lista recursos viejos
-
-Tras simplificar el stack, limpia referencias huérfanas (no borra el bucket):
-
-```bash
-cd 00-terraform-state
-terraform state rm aws_s3_bucket_server_side_encryption_configuration.terraform_state 2>/dev/null || true
-terraform state rm aws_s3_bucket_ownership_controls.terraform_state 2>/dev/null || true
-terraform state rm aws_s3_bucket_policy.terraform_state 2>/dev/null || true
-terraform plan -refresh=false
-```
+Variables: `TF_STATE_BUCKET`, `TF_LOCK_TABLE` (ver [../.github/README.md](../.github/README.md)).
