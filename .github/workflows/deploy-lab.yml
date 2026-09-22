@@ -1,17 +1,28 @@
 name: Deploy Lab (semi-auto)
 
-# Despliegue al Learner Lab solo con clic manual.
-# Requiere Environment "clases" con Secrets AWS (+ Session Token).
+# ---------------------------------------------------------------------------
+# Despliegue MANUAL al AWS Academy Learner Lab (nunca en push automatico).
+#
+# Prerrequisitos:
+#   1) Bootstrap local 00-terraform-state (S3 + DynamoDB locks)
+#   2) Environment GitHub "clases" con Secrets AWS_* y Variables TF_*
+#   3) Session Token fresco del lab (caduca en pocas horas)
 #
 # Backend key (sin workspace en el path):
 #   key = "01-cloud-infrastructure/terraform.tfstate"
-# Con workspace clases → s3://…/env:/clases/01-cloud-infrastructure/terraform.tfstate
+# Workspace clases → s3://…/env:/clases/01-cloud-infrastructure/terraform.tfstate
+# ---------------------------------------------------------------------------
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: "Accion a ejecutar"
+        description: >
+          Accion: plan = solo previsualizar cambios TF (seguro, sin tocar AWS de app).
+          apply = crear/actualizar solo infraestructura Terraform.
+          full-deploy = infra + build/push ECR ARM64 + reciclar ASG + smoke test (primera vez o cambio grande).
+          images-only = solo imagenes Docker/ECR + reciclar ASG (codigo app/nginx sin tocar VPC).
+          destroy = eliminar toda la infra del workspace clases.
         required: true
         type: choice
         options:
@@ -22,12 +33,16 @@ on:
           - destroy
         default: plan
       confirm:
-        description: "DEPLOY para apply/full-deploy/images-only; DESTROY para destroy"
+        description: >
+          Confirmacion de seguridad. Escribe exactamente DEPLOY para apply, full-deploy o images-only.
+          Escribe exactamente DESTROY para destroy. Deja vacio (o cualquier cosa) solo con action=plan.
         required: true
         type: string
         default: ""
       skip_images:
-        description: "Omitir build/push (solo si ECR ya tiene las 5 imagenes)"
+        description: >
+          Solo aplica a full-deploy / images-only. false (recomendado) = rebuild y push de las 5 imagenes ARM64.
+          true = omitir build (usa las imagenes que ya estan en ECR). Marca true solo si no cambiaste Dockerfiles/app.
         required: false
         type: boolean
         default: false
@@ -48,9 +63,39 @@ env:
 
 jobs:
   guard:
-    name: Validar confirmacion
+    name: "0 · Validar parámetros y confirmación"
     runs-on: ubuntu-latest
     steps:
+      - name: Mostrar guia de la accion elegida
+        env:
+          ACTION: ${{ inputs.action }}
+          CONFIRM: ${{ inputs.confirm }}
+          SKIP: ${{ inputs.skip_images }}
+        run: |
+          cat <<EOF
+          ========================================
+          Deploy Lab — guia rapida
+          ========================================
+          action       = ${ACTION}
+          confirm      = ${CONFIRM:-"(vacio)"}
+          skip_images  = ${SKIP}
+
+          Leyenda
+            plan         → terraform plan (no cambia infra)
+            apply        → terraform apply (solo VPC/ALB/ASG/ECR/MySQL)
+            full-deploy  → apply + Docker build/push + recycle ASG + smoke
+            images-only  → solo Docker/ECR + recycle ASG (sin apply TF)
+            destroy      → terraform destroy (borra el laboratorio)
+
+          Confirmacion
+            apply / full-deploy / images-only → debes escribir: DEPLOY
+            destroy                           → debes escribir: DESTROY
+            plan                              → confirm libre
+
+          URL del sitio: siempre http:// (el ALB no tiene HTTPS)
+          ========================================
+          EOF
+
       - name: Comprobar confirmacion segun accion
         env:
           ACTION: ${{ inputs.action }}
@@ -80,7 +125,7 @@ jobs:
           esac
 
   terraform:
-    name: Terraform ${{ inputs.action }}
+    name: "Terraform · ${{ inputs.action }}"
     needs: guard
     if: inputs.action != 'images-only'
     runs-on: ubuntu-latest
@@ -233,7 +278,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   containers:
-    name: Build/Push + Deploy App
+    name: "Contenedores · build/push ECR + recycle ASG"
     needs: [guard, terraform]
     if: always() && needs.guard.result == 'success' && (inputs.action == 'full-deploy' || inputs.action == 'images-only') && (inputs.action == 'images-only' || needs.terraform.result == 'success')
     runs-on: ubuntu-latest

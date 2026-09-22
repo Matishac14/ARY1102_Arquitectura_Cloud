@@ -1,5 +1,9 @@
 name: Terraform CI
 
+# Validacion estatica (sin credenciales AWS).
+# Corre en PR/push cuando cambia Terraform. No crea ni destruye recursos.
+# Para desplegar al lab usa el workflow "Deploy Lab (semi-auto)".
+
 on:
   pull_request:
     paths:
@@ -26,7 +30,7 @@ env:
 
 jobs:
   validate-bootstrap:
-    name: Validate 00-terraform-state
+    name: "00 — Validar bootstrap tfstate (fmt + validate)"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,7 +64,7 @@ jobs:
         run: terraform validate
 
   validate-infra:
-    name: Validate 01-cloud-infrastructure
+    name: "01 — Validar infra cloud (fmt + validate)"
     runs-on: ubuntu-latest
     defaults:
       run:

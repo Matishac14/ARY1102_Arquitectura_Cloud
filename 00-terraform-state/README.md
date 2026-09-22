@@ -66,3 +66,5 @@ El import también hace Read; en el lab puede fallar por el mismo SCP. En ese ca
 ## GitHub
 
 Tras tener bucket + tabla, Environment `clases` → ver [../.github/README.md](../.github/README.md).
+
+Arquitectura: [../04-architecture-evidence/arquitectura-freshbox.md](../04-architecture-evidence/arquitectura-freshbox.md).

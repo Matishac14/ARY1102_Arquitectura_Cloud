@@ -14,9 +14,11 @@ VPC: `10.0.0.0/22` · Region: `us-east-1` · Instancias: `t4g.small` (ARM) · Pe
 
 ### Security Groups (matriz EP1)
 
-- **ALB** → 80/443 desde `0.0.0.0/0`
-- **App** → 80/443 solo desde SG-ALB
-- **Data** → 3306 solo desde SG-App
+- **ALB** → TCP **80** desde `0.0.0.0/0` (sin listener HTTPS)
+- **App** → TCP **80** solo desde SG-ALB
+- **Data** → TCP **3306** solo desde SG-App
+
+Diagrama Mermaid: [`../04-architecture-evidence/arquitectura-freshbox.md`](../04-architecture-evidence/arquitectura-freshbox.md)
 
 ## Restricciones Learner Lab respetadas
 
