@@ -179,18 +179,27 @@ jobs:
         id: outs
         run: |
           set -euo pipefail
-          if [ -f terraform.tfstate ] || terraform state pull >/dev/null 2>&1; then
-            echo "alb_url=$(terraform output -raw alb_url 2>/dev/null || echo n/a)" >> "$GITHUB_OUTPUT"
-            echo "mysql_ip=$(terraform output -raw mysql_private_ip 2>/dev/null || echo n/a)" >> "$GITHUB_OUTPUT"
-            terraform output || true
-          fi
+          # State vacio (primer plan) no tiene outputs; no escribir warnings en GITHUB_OUTPUT
+          safe_out() {
+            local key="$1" name="$2" val=""
+            val="$(terraform output -raw "$name" 2>/dev/null | tr -d '\r' | head -n 1 || true)"
+            if [ -z "$val" ] || [[ "$val" == *"Warning"* ]] || [[ "$val" == *"│"* ]] || [[ "$val" == *"Error"* ]]; then
+              val="n/a"
+            fi
+            echo "${key}=${val}" >> "$GITHUB_OUTPUT"
+          }
+          safe_out alb_url alb_url
+          safe_out mysql_ip mysql_private_ip
+          terraform output -json >/tmp/tf-outputs.json 2>/dev/null \
+            && echo "Outputs JSON OK" \
+            || echo "Sin outputs en state (normal en el primer plan)"
 
       - name: Resumen
         if: always()
         run: |
           echo "Accion: ${{ inputs.action }}"
-          echo "ALB: ${{ steps.outs.outputs.alb_url }}"
-          echo "MySQL: ${{ steps.outs.outputs.mysql_ip }}"
+          echo "ALB: ${{ steps.outs.outputs.alb_url || 'n/a' }}"
+          echo "MySQL: ${{ steps.outs.outputs.mysql_ip || 'n/a' }}"
 
   containers:
     name: Build/Push + Deploy App
