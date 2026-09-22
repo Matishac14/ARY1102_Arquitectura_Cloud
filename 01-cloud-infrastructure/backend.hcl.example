@@ -1,5 +1,8 @@
 bucket         = "freshbox-ep1-tfstate-ACCOUNT_ID"
-key            = "clases/01-cloud-infrastructure/terraform.tfstate"
+# NO incluir el nombre del workspace aquí: Terraform ya antepone env:/<workspace>/
+# Resultado con workspace clases:
+#   env:/clases/01-cloud-infrastructure/terraform.tfstate
+key            = "01-cloud-infrastructure/terraform.tfstate"
 region         = "us-east-1"
 dynamodb_table = "freshbox-ep1-terraform-locks"
 encrypt        = true

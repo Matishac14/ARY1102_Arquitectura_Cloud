@@ -21,6 +21,9 @@ concurrency:
   group: terraform-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
+
 jobs:
   validate-bootstrap:
     name: Validate 00-terraform-state
@@ -29,9 +32,18 @@ jobs:
       run:
         working-directory: 00-terraform-state
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Cache Terraform providers
+        uses: actions/cache@v4.2.3
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: tf-plugins-${{ runner.os }}-00-${{ hashFiles('00-terraform-state/.terraform.lock.hcl') }}
+          restore-keys: |
+            tf-plugins-${{ runner.os }}-00-
+            tf-plugins-${{ runner.os }}-
+
+      - uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: "1.9.8"
           terraform_wrapper: false
@@ -40,7 +52,9 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: terraform init (no backend)
-        run: terraform init -backend=false
+        run: |
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          terraform init -backend=false
 
       - name: terraform validate
         run: terraform validate
@@ -52,9 +66,18 @@ jobs:
       run:
         working-directory: 01-cloud-infrastructure
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Cache Terraform providers
+        uses: actions/cache@v4.2.3
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: tf-plugins-${{ runner.os }}-01-${{ hashFiles('01-cloud-infrastructure/.terraform.lock.hcl') }}
+          restore-keys: |
+            tf-plugins-${{ runner.os }}-01-
+            tf-plugins-${{ runner.os }}-
+
+      - uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_version: "1.9.8"
           terraform_wrapper: false
@@ -63,7 +86,9 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: terraform init (no backend)
-        run: terraform init -backend=false
+        run: |
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          terraform init -backend=false
 
       - name: terraform validate
         run: terraform validate

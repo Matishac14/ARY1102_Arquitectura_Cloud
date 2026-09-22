@@ -8,12 +8,11 @@ Crea el backend compartido para `01-cloud-infrastructure` y GitHub Actions.
 
 - Región: `us-east-1`
 - Bucket **globalmente único** (incluye Account ID)
-- No crea roles IAM
+- Stack **minimo**: bucket + versioning + public access block + DynamoDB locks
 - Si `terraform plan` falla con `GetBucketObjectLockConfiguration` / SCP deny:
   el bucket ya existe; usa `terraform plan -refresh=false` o no re-apliques `00`.
-  GitHub solo necesita los nombres del bucket y la tabla.
 
-## Uso (una vez por cuenta / si se perdió el bucket)
+## Uso (una vez por cuenta)
 
 ```bash
 export AWS_PROFILE=clases
@@ -24,9 +23,20 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init
 terraform apply
 terraform output backend_hcl_example
+terraform output state_s3_path_hint
 ```
 
-Copia el output a `../01-cloud-infrastructure/backend.hcl` y luego:
+Copia el output a `../01-cloud-infrastructure/backend.hcl`.
+
+### Ruta del state (workspaces)
+
+Con `key = "01-cloud-infrastructure/terraform.tfstate"` y workspace `clases`:
+
+```text
+s3://freshbox-ep1-tfstate-<ACCOUNT>/env:/clases/01-cloud-infrastructure/terraform.tfstate
+```
+
+**No** pongas `clases/` dentro del `key` (si no, queda `env:/clases/clases/...`).
 
 ```bash
 cd ../01-cloud-infrastructure
@@ -36,13 +46,14 @@ terraform workspace select clases || terraform workspace new clases
 
 ## GitHub
 
-Tras el apply, configura el Environment `clases` (ver [../.github/README.md](../.github/README.md)):
+## Si el state local de `00` aún lista recursos viejos
 
-| Tipo | Nombre | Valor |
-|------|--------|-------|
-| Variable | `AWS_REGION` | `us-east-1` |
-| Variable | `TF_STATE_BUCKET` | output `state_bucket_name` |
-| Variable | `TF_LOCK_TABLE` | output `dynamodb_lock_table` |
-| Secret (env `clases`) | `AWS_ACCESS_KEY_ID` | del lab |
-| Secret (env `clases`) | `AWS_SECRET_ACCESS_KEY` | del lab |
-| Secret (env `clases`) | `AWS_SESSION_TOKEN` | del lab (caduca) |
+Tras simplificar el stack, limpia referencias huérfanas (no borra el bucket):
+
+```bash
+cd 00-terraform-state
+terraform state rm aws_s3_bucket_server_side_encryption_configuration.terraform_state 2>/dev/null || true
+terraform state rm aws_s3_bucket_ownership_controls.terraform_state 2>/dev/null || true
+terraform state rm aws_s3_bucket_policy.terraform_state 2>/dev/null || true
+terraform plan -refresh=false
+```

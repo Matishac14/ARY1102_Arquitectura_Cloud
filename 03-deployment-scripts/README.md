@@ -6,7 +6,11 @@
 | `_require-aws-credentials.sh` | Chequeo interno: falla si no hay credenciales |
 | `build-container-images.sh` | Build local ARM64 de los 5 contenedores |
 | `push-images-to-ecr.sh` | Build + push a ECR |
-| `deploy-docker-services.sh` | Redeploy en instancias del ASG via SSM |
+| `deploy-docker-services.sh` | Redeploy en ASG (recycle instancias) |
+| `migrate-tfstate-key.sh` | Corrige ruta S3 duplicada `env:/clases/clases/...` |
+| `validate-ep1.sh` | Valida infra + CRUD via ALB |
+| `recreate-from-zero.sh` | Destroy+apply local (preferir GitHub Actions) |
+| `use-workspace-clases.sh` | Selecciona workspace Terraform `clases` |
 
 ## Prerrequisito: credenciales del lab
 

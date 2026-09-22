@@ -4,54 +4,57 @@
 
 | Workflow | Trigger | Proposito |
 |----------|---------|-----------|
-| `terraform-ci.yml` | PR / push | `fmt` + `validate` (sin credenciales AWS) |
-| `deploy-lab.yml` | **solo manual** (`workflow_dispatch`) | plan / apply / full-deploy / destroy en el lab |
+| `terraform-ci.yml` | PR / push | `fmt` + `validate` + cache providers |
+| `deploy-lab.yml` | **solo manual** | plan / apply / full-deploy / images-only / destroy |
 
 ## Orden correcto
 
-1. **Local (una vez):** bootstrap `00-terraform-state` → crea S3 + DynamoDB  
-2. **GitHub:** Environment `clases` con Variables + Secrets  
-3. **Actions:** `plan` → luego `full-deploy`
+1. **Local (una vez):** bootstrap `00-terraform-state` → S3 + DynamoDB
+2. **GitHub:** Environment `clases` (Variables + Secrets)
+3. **Actions:** `plan` → `full-deploy` (o `images-only` si solo cambias contenedores)
 
-## Configurar Environment `clases`
+## State S3 (importante)
 
-1. Repo → **Settings** → **Environments** → **New environment** → nombre: `clases`
-2. (Opcional) Required reviewers / Wait timer
-3. **Environment secrets**
+El `key` del backend **no** debe incluir el workspace. Terraform antepone `env:/<workspace>/`.
 
-| Secret | Origen |
-|--------|--------|
-| `AWS_ACCESS_KEY_ID` | Lab → AWS Details |
-| `AWS_SECRET_ACCESS_KEY` | Lab → AWS Details |
-| `AWS_SESSION_TOKEN` | Lab → AWS Details (**caduca**; renovar cada sesion) |
+| Incorrecto (duplica clases) | Correcto |
+|-----------------------------|----------|
+| `clases/01-cloud-infrastructure/terraform.tfstate` | `01-cloud-infrastructure/terraform.tfstate` |
+| → `env:/clases/clases/01-…` | → `env:/clases/01-cloud-infrastructure/terraform.tfstate` |
 
-4. **Variables** (Environment o Repository)
+El workflow migra automaticamente la ruta vieja si existe. Local:
 
-| Variable | Valor (tu lab) |
-|----------|----------------|
+```bash
+./03-deployment-scripts/migrate-tfstate-key.sh
+```
+
+## Environment `clases`
+
+**Secrets:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`  
+**Variables:**
+
+| Variable | Valor |
+|----------|--------|
 | `AWS_REGION` | `us-east-1` |
 | `TF_STATE_BUCKET` | `freshbox-ep1-tfstate-613895857683` |
 | `TF_LOCK_TABLE` | `freshbox-ep1-terraform-locks` |
 
-## Como desplegar (semi-auto)
+## Como desplegar
 
-1. Actualiza los 3 Secrets con el Session Token fresco del lab
-2. Actions → **Deploy Lab (semi-auto)** → **Run workflow**
-3. Parametros:
-   - `action=plan` → solo plan (confirm vacio OK)
-   - `action=apply` + `confirm=DEPLOY`
-   - `action=full-deploy` + `confirm=DEPLOY` (infra + imagenes + recycle ASG)
-   - `action=destroy` + `confirm=DESTROY`
+1. Renueva Session Token en Secrets
+2. Actions → **Deploy Lab (semi-auto)** → Run workflow
+3. Acciones:
+   - `plan` — solo plan
+   - `apply` + `DEPLOY` — solo infra
+   - `full-deploy` + `DEPLOY` — infra + imagenes + recycle ASG
+   - `images-only` + `DEPLOY` — solo build/push + recycle (sin apply)
+   - `destroy` + `DESTROY`
 
-## Requisitos en el repo (ya resueltos)
-
-- `01-cloud-infrastructure/environments/clases/terraform.tfvars` **versionado** (`aws_profile = ""`)
-- `backend.tf` con `backend "s3" {}` (Actions genera `backend.hcl` en el runner)
-- Local: `export AWS_PROFILE=clases` (no hace falta perfil en el tfvars)
+El job summary muestra la URL del ALB. Abrir con **http://** (no https).
 
 ## Notas Learner Lab
 
-- No usamos OIDC (no se pueden crear roles IAM en el lab)
-- No hay apply automatico en `push` (protege presupuesto)
-- Si `sts get-caller-identity` falla → renueva `AWS_SESSION_TOKEN`
-- Si `terraform plan` en `00` falla con `GetBucketObjectLockConfiguration` → SCP del lab; el bucket ya existe, no hace falta re-aplicar `00`
+- Sin OIDC (no se crean roles IAM)
+- Sin apply automatico en push
+- Token caduca → renovar Secrets
+- Bootstrap `00`: si `plan` falla por Object Lock / SCP → `terraform plan -refresh=false`

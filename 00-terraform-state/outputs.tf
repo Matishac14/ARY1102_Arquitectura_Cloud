@@ -21,9 +21,14 @@ output "backend_hcl_example" {
   description = "Contenido sugerido para 01-cloud-infrastructure/backend.hcl"
   value       = <<-EOT
     bucket         = "${aws_s3_bucket.terraform_state.id}"
-    key            = "clases/01-cloud-infrastructure/terraform.tfstate"
+    key            = "01-cloud-infrastructure/terraform.tfstate"
     region         = "${var.aws_region}"
     dynamodb_table = "${aws_dynamodb_table.terraform_locks.name}"
     encrypt        = true
   EOT
+}
+
+output "state_s3_path_hint" {
+  description = "Ruta real en S3 con workspace clases (Terraform antepone env:/clases/)"
+  value       = "s3://${aws_s3_bucket.terraform_state.id}/env:/clases/01-cloud-infrastructure/terraform.tfstate"
 }
