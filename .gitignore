@@ -39,8 +39,11 @@ EP2/.tools/
 .tmp-orig-ep1/
 EP1/.tmp-orig-ep1/
 
-# ── Entregables académicos generados (locales; no van al remoto) ───────────
+# ── Entregables académicos (locales; se suben aparte, no al repo) ───────────
 **/documentos/
+**/informe/
+**/presentacion/
+**/duoc-template/
 *.docx
 ~$*
 # PDF generados (defensa / informe); sí versionar enunciados oficiales

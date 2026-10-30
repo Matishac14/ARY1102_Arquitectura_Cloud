@@ -10,7 +10,7 @@ Repositorio organizado por evaluación para trazabilidad. Cada carpeta `EP*` es 
 ## Cómo navegar
 
 - **EP1:** infra Terraform, imágenes Docker, scripts de lab, informe y diagrama AS-IS.
-- **EP2:** enunciado, Terraform EKS+RDS, app/manifiestos K8s, arquitectura TO-BE, presentación HTML.
+- **EP2:** enunciado, Terraform EKS+RDS, app/manifiestos K8s y arquitectura TO-BE (informe/presentación se entregan aparte).
 - **GitHub Actions** (`.github/`): workflow de lab EP1; rutas apuntan a `EP1/`.
 
 ## Convención
@@ -18,5 +18,5 @@ Repositorio organizado por evaluación para trazabilidad. Cada carpeta `EP*` es 
 - No mezclar entregables entre carpetas.
 - Si se reutiliza algo de EP1 en EP2, se **copia** dentro de `EP2/` (p. ej. `EP2/arquitectura/as-is-ep1/`).
 - Prefijos AWS sugeridos: `freshbox-ep1-*` / `freshbox-ep2-*` para no cruzar recursos en Academy.
-- No versionar: `.terraform/`, `*.tfstate`, `terraform.tfvars`, `backend.hcl`, `**/k8s/secret.yaml`, informes/PDF locales (`documentos/`).
+- No versionar: `.terraform/`, `*.tfstate`, `terraform.tfvars`, `backend.hcl`, `**/k8s/secret.yaml`, ni entregables Word/PDF/presentación (`documentos/`, `informe/`, `presentacion/`, `duoc-template/`).
 - Secretos K8s: copiar `secret.yaml.example` → `secret.yaml` antes de aplicar.
