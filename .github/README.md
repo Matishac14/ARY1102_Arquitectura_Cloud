@@ -78,17 +78,20 @@ El `key` **no** lleva el nombre del workspace. Terraform antepone `env:/clases/`
 | `clases/01-cloud-infrastructure/terraform.tfstate` | `01-cloud-infrastructure/terraform.tfstate` |
 | → `env:/clases/clases/…` | → `env:/clases/01-cloud-infrastructure/…` |
 
-Migración local si quedó la ruta vieja: `./03-deployment-scripts/migrate-tfstate-key.sh`
+Migración local si quedó la ruta vieja: `./EP1/03-deployment-scripts/migrate-tfstate-key.sh`
+
+> Tras la reorganización del repo, el código vive bajo **`EP1/`**.  
+> El workflow usa `WORKING_DIR=EP1/01-cloud-infrastructure` pero la **key S3** sigue siendo `01-cloud-infrastructure/terraform.tfstate` (sin migrar state).
 
 ## Después del deploy
 
 - El **Job summary** muestra la URL del ALB.  
 - Abrir siempre con **`http://`** (no https).  
-- Validar: `./03-deployment-scripts/validate-ep1.sh`
+- Validar: `./EP1/03-deployment-scripts/validate-ep1.sh`
 
 ## Notas Learner Lab
 
 - Sin OIDC (no se crean roles IAM; solo `LabRole`).  
 - Token expirado → `sts` falla → renueva los 3 Secrets.  
-- Bootstrap `00`: si falla el Read de S3 por Object Lock / SCP, es limitación del lab; ver `00-terraform-state/README.md`.  
-- Diagrama de arquitectura: [`04-architecture-evidence/arquitectura-freshbox.md`](../04-architecture-evidence/arquitectura-freshbox.md)
+- Bootstrap `00`: si falla el Read de S3 por Object Lock / SCP, es limitación del lab; ver `EP1/00-terraform-state/README.md`.  
+- Diagrama de arquitectura: [`EP1/04-architecture-evidence/arquitectura-freshbox.md`](../EP1/04-architecture-evidence/arquitectura-freshbox.md)

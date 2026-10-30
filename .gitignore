@@ -1,30 +1,56 @@
+# ── Terraform ──────────────────────────────────────────────────────────────
 .terraform/
 *.tfstate
 *.tfstate.*
+terraform.tfstate.d/
 crash.log
 crash.*.log
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-# tfvars locales / secretos; el de clases SÍ se versiona (Actions lo necesita)
+# tfvars locales / secretos; el de clases EP1 SÍ se versiona (Actions)
 terraform.tfvars
-!01-cloud-infrastructure/environments/clases/terraform.tfvars
-00-terraform-state/terraform.tfvars
+!EP1/01-cloud-infrastructure/environments/clases/terraform.tfvars
+**/00-terraform-state/terraform.tfvars
 backend.hcl
+
+# ── Credenciales / secretos ────────────────────────────────────────────────
 *.pem
 *.ppk
-.idea/
 .env
 .env.*
 credentials
 *.credentials
 aws-credentials*
-.tmp-orig-ep1/
-.DS_Store
+**/k8s/secret.yaml
+!**/k8s/secret.yaml.example
 
-# Entregables académicos locales (no van al remoto)
-documentos/
+# ── IDE / SO / Cursor ──────────────────────────────────────────────────────
+.idea/
+.cursor/
+.DS_Store
+Thumbs.db
+
+# ── Dependencias y binarios locales ────────────────────────────────────────
+node_modules/
+EP2/.tools/
+**/package-lock.json
+.tmp-orig-ep1/
+EP1/.tmp-orig-ep1/
+
+# ── Entregables académicos generados (locales; no van al remoto) ───────────
+**/documentos/
 *.docx
-*.pdf
 ~$*
+# PDF generados (defensa / informe); sí versionar enunciados oficiales
+*.pdf
+!**/enunciado/*.pdf
+
+# ── Backups y artefactos temporales ────────────────────────────────────────
+*-pre-*.docx
+*.backup*
+*.bak
+*.zip
+*.tar.gz
+*.tgz

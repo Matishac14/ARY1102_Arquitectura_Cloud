@@ -1,0 +1,6 @@
+aws_region  = "us-east-1"
+aws_profile = "clases"
+project_name = "freshbox-ep2"
+lab_role_name = "LabRole"
+cluster_name = "freshbox-cluster"
+db_password = "alumno123"

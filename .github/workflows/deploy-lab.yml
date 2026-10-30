@@ -57,7 +57,8 @@ concurrency:
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
   TF_VAR_FILE: environments/clases/terraform.tfvars
-  WORKING_DIR: 01-cloud-infrastructure
+  # Rutas de código bajo EP1/; la key de state en S3 se mantiene para no romper el lab.
+  WORKING_DIR: EP1/01-cloud-infrastructure
   TF_VAR_aws_profile: ""
   TF_STATE_KEY: 01-cloud-infrastructure/terraform.tfstate
 
@@ -335,11 +336,11 @@ jobs:
             echo "=== Building ${repo} ==="
             docker buildx build --platform linux/arm64 -t "${ECR}/${repo}:latest" "$path" --push
           }
-          build_push freshbox-frontend microservicioFrontend
-          build_push freshbox-get-products microserviciosBackend/get-products
-          build_push freshbox-create-product microserviciosBackend/create-product
-          build_push freshbox-update-product microserviciosBackend/update-product
-          build_push freshbox-delete-product microserviciosBackend/delete-product
+          build_push freshbox-frontend EP1/microservicioFrontend
+          build_push freshbox-get-products EP1/microserviciosBackend/get-products
+          build_push freshbox-create-product EP1/microserviciosBackend/create-product
+          build_push freshbox-update-product EP1/microserviciosBackend/update-product
+          build_push freshbox-delete-product EP1/microserviciosBackend/delete-product
           for r in freshbox-frontend freshbox-get-products freshbox-create-product freshbox-update-product freshbox-delete-product; do
             n="$(aws ecr describe-images --repository-name "$r" --query 'length(imageDetails)' --output text)"
             echo "$r: $n"
@@ -356,7 +357,7 @@ jobs:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
           TF_VAR_aws_profile: ""
-        working-directory: 01-cloud-infrastructure
+        working-directory: EP1/01-cloud-infrastructure
         run: |
           set -euo pipefail
           OLD_KEY="env:/clases/clases/01-cloud-infrastructure/terraform.tfstate"
@@ -377,14 +378,14 @@ jobs:
           terraform workspace select clases
 
       - name: Reciclar ASG (deploy contenedores)
-        working-directory: 01-cloud-infrastructure
+        working-directory: EP1/01-cloud-infrastructure
         run: |
           set -euo pipefail
           export AWS_DEFAULT_REGION="$AWS_REGION"
           ../03-deployment-scripts/deploy-docker-services.sh
 
       - name: Smoke test ALB
-        working-directory: 01-cloud-infrastructure
+        working-directory: EP1/01-cloud-infrastructure
         run: |
           set -euo pipefail
           ALB=$(terraform output -raw alb_url)

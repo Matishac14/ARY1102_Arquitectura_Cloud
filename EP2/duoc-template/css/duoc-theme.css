@@ -1,0 +1,1578 @@
+/* ==========================================================================
+   DUOC UC 2026 - Official Corporate Presentation Theme (HTML Engine)
+   Colores Institucionales: Amarillo DUOC (#FFB71B) + Azul Marino (#002B49)
+   Estructura: Fiel a la plantilla 10_GOV_AST_2026_PLANTILLA_COLOR_PRESENTACIONES_DUOC.pptx
+   Proporción: 16:9 Widescreen (1920 x 1080 px native canvas)
+   Tipografía optimizada para 1080p: Textos legibles, tarjetas llenas y atractivas
+   ========================================================================== */
+
+:root {
+  /* Paleta Oficial DUOC UC */
+  --duoc-yellow:     #FFB71B; /* Amarillo Institucional DUOC */
+  --duoc-yellow-alt: #FFB800; /* Variante sRGB PPTX */
+  --duoc-navy:       #002B49; /* Azul Marino Oficial DUOC */
+  --duoc-blue:       #156082; /* Azul Acero Corporativo */
+  --duoc-dark:       #1A1D20; /* Gris Carbón Muy Oscuro Institucional para Títulos y Textos */
+  --duoc-gray-card:  #E6E7E8; /* Gris Fondo de Tarjetas (sRGB #E6E7E8 del PPTX) */
+  --duoc-gray-text:  #4A4E52; /* Gris Oscuro Legible para Subtítulos y Metadatos */
+  --duoc-gray-light: #F6F7F9; /* Gris muy suave para fondos internos */
+  --duoc-white:      #FFFFFF;
+  --duoc-green:      #196B24; /* Verde éxito / cumplimiento */
+  --duoc-border:     #D5D8DC;
+  
+  /* Sombras y acabados limpios corporativos */
+  --shadow-card:     0 6px 20px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 14px 36px rgba(0, 43, 73, 0.08);
+  
+  /* Tipografía */
+  --font-family:     'Aptos', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading:    'Aptos Display', 'Aptos', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ── Reset & Canvas Setup ───────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #CBD0D8;
+  font-family: var(--font-family);
+  color: var(--duoc-dark);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Presentation Viewport & Scaler ─────────────────────────────────────── */
+#deck-viewport {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #CBD0D8;
+}
+
+#slide-canvas {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  min-width: 1920px;
+  min-height: 1080px;
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+  background-color: var(--duoc-white);
+  overflow: hidden;
+}
+
+/* ── Slide Base ─────────────────────────────────────────────────────────── */
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+  background-color: var(--duoc-white);
+  overflow: hidden;
+}
+
+.slide.active {
+  display: block;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   LOGOTIPO DUOC UC: POSICIÓN FIJA E INMUTABLE (CERO SALTO EN TRANSICIÓN)
+   ========================================================================== */
+.fixed-duoc-logo {
+  position: absolute;
+  top: 42px;
+  right: 70px;
+  left: auto;
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Esquina vacía: foto a la derecha → logo a la izquierda */
+.fixed-duoc-logo.logo-left,
+.slide-section:not(.inverted) .fixed-duoc-logo {
+  right: auto;
+  left: 70px;
+}
+
+/* Foto/mosaico a la izquierda → logo a la derecha */
+.slide-cover .fixed-duoc-logo,
+.slide-section.inverted .fixed-duoc-logo,
+.slide-agenda .fixed-duoc-logo,
+.slide-split .fixed-duoc-logo {
+  right: 70px;
+  left: auto;
+}
+
+/* ==========================================================================
+   TIRA NEGRA VERTICAL INSTITUCIONAL EXTRAÍDA DEL PATRÓN PPTX
+   ========================================================================== */
+.black-sidebar-strip {
+  position: absolute;
+  top: 25px;
+  left: 28px;
+  width: 58px;
+  height: 1026px;
+  z-index: 30;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.12));
+}
+
+/* Ajuste de márgenes para slides con la tira lateral negra */
+.slide.with-strip .slide-header {
+  left: 135px;
+  right: 70px;
+}
+
+.slide.with-strip .slide-body {
+  left: 135px;
+  right: 70px;
+}
+
+/* ==========================================================================
+   ESTRUCTURA DE ENCABEZADO ESTÁNDAR DUOC UC (Layout 22 - 5_INTERIOR 3)
+   ========================================================================== */
+.slide-header {
+  position: absolute;
+  top: 38px;
+  left: 70px;
+  right: 70px;
+  height: 110px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-right: 280px; /* Espacio reservado para el logo fijo */
+  z-index: 10;
+}
+
+.slide-header .header-left-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.slide-header .header-yellow-bar {
+  width: 10px;
+  height: 76px;
+  background-color: var(--duoc-yellow);
+  border-radius: 5px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.slide-header .header-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slide-header .header-category {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--duoc-gray-text);
+}
+
+.slide-header .slide-title {
+  font-family: var(--font-heading);
+  font-size: 44px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+/* ==========================================================================
+   ÁREA DE CONTENIDO (CUERPO DEL SLIDE)
+   ========================================================================== */
+.slide-body {
+  position: absolute;
+  top: 155px;
+  left: 70px;
+  right: 70px;
+  bottom: 75px; /* Margen de seguridad para evitar colisiones con la barra flotante */
+  z-index: 5;
+}
+
+/* ==========================================================================
+   SLOGAN OFICIAL # Verdaderamente Conectad@s (IDÉNTICO AL PPTX)
+   ========================================================================== */
+.slogan-duoc-official {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  color: var(--duoc-dark);
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slogan-duoc-official .slogan-yellow {
+  color: var(--duoc-yellow);
+  font-weight: 900;
+}
+
+.slogan-duoc-official .slogan-dark-reg {
+  color: var(--duoc-dark);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   SLIDE 1: PORTADA PRINCIPAL (Layout 1 - 1_PORTADA)
+   ========================================================================== */
+.slide-cover {
+  background-color: var(--duoc-white);
+}
+
+.slide-cover .cover-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-cover .cover-left-photo {
+  width: 48%;
+  height: 100%;
+  padding: 35px 25px 35px 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-cover .cover-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 32px;
+}
+
+.slide-cover .cover-right-content {
+  width: 52%;
+  height: 100%;
+  padding: 130px 80px 60px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.slide-cover .cover-card {
+  background: var(--duoc-white);
+  border-radius: 24px;
+  position: relative;
+  padding: 20px 0;
+}
+
+.cover-yellow-square {
+  width: 32px;
+  height: 32px;
+  background-color: var(--duoc-yellow);
+  border-radius: 6px;
+  margin-bottom: 28px;
+}
+
+.slide-cover .cover-title {
+  font-family: var(--font-heading);
+  font-size: 72px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  line-height: 1.12;
+  margin-bottom: 26px;
+  letter-spacing: -0.5px;
+}
+
+.slide-cover .cover-subtitle {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--duoc-gray-text);
+  line-height: 1.45;
+  margin-bottom: 26px;
+}
+
+.slide-cover .cover-footer {
+  border-top: 1px solid var(--duoc-border);
+  padding-top: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+  color: var(--duoc-gray-text);
+}
+
+/* ==========================================================================
+   SLIDE 2: AGENDA (Layout 14 - PORTADA interior 1)
+   ========================================================================== */
+.slide-agenda {
+  background-color: var(--duoc-white);
+}
+
+.slide-agenda .agenda-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-agenda .agenda-left-mosaic {
+  width: 45%;
+  height: 100%;
+  padding: 35px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1.25fr 1fr;
+  gap: 18px;
+}
+
+.slide-agenda .mosaic-large {
+  grid-column: 1 / span 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
+.slide-agenda .mosaic-small-1,
+.slide-agenda .mosaic-small-2 {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.slide-agenda .agenda-right-content {
+  width: 55%;
+  height: 100%;
+  padding: 45px 70px 45px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 110px;
+}
+
+.slide-agenda .agenda-top {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.slide-agenda .agenda-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.slide-agenda .agenda-yellow-bar {
+  width: 8px;
+  height: 56px;
+  background-color: var(--duoc-yellow);
+  border-radius: 4px;
+}
+
+.slide-agenda .agenda-heading {
+  font-family: var(--font-heading);
+  font-size: 54px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+}
+
+.slide-agenda .agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.slide-agenda .agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 22px 28px;
+  border-radius: 20px;
+  background-color: var(--duoc-gray-card);
+  transition: all 0.2s ease;
+}
+
+.slide-agenda .agenda-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: var(--duoc-yellow);
+  color: var(--duoc-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.slide-agenda .agenda-text {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--duoc-dark);
+}
+
+/* ==========================================================================
+   SEPARADORES DE SECCIÓN (Layout 7, 8, 9, 10 - PORTADA interior 4)
+   ========================================================================== */
+.slide-section {
+  background-color: var(--duoc-white);
+}
+
+.slide-section .section-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.slide-section .section-card-col {
+  width: 46%;
+  height: 100%;
+  padding: 45px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.slide-section .section-box {
+  background: var(--duoc-white);
+  padding: 10px 0;
+}
+
+.slide-section .section-yellow-square {
+  width: 30px;
+  height: 30px;
+  background-color: var(--duoc-yellow);
+  border-radius: 6px;
+  margin-bottom: 24px;
+}
+
+.slide-section .section-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--duoc-gray-text);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.slide-section .section-title {
+  font-family: var(--font-heading);
+  font-size: 58px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  line-height: 1.15;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+.slide-section .section-desc {
+  font-size: 24px;
+  color: var(--duoc-gray-text);
+  line-height: 1.6;
+}
+
+.slide-section .section-image-col {
+  width: 54%;
+  height: 100%;
+  padding: 40px 40px 40px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-section .section-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 32px;
+}
+
+/* Invertido */
+.slide-section.inverted .section-wrapper {
+  flex-direction: row-reverse;
+}
+
+.slide-section.inverted .section-image-col {
+  padding: 40px 0 40px 40px;
+}
+
+/* ==========================================================================
+   SLIDE SPLIT: CONTENIDO CON IMAGEN LATERAL (Layout 11, 12, 13)
+   ========================================================================== */
+.slide-split .split-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 40px;
+  align-items: stretch;
+}
+
+.slide-split .split-left-visual {
+  width: 37%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.slide-split .split-visual-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 28px;
+}
+
+.slide-split .split-visual-img.contain-fit {
+  object-fit: contain;
+  background-color: #FFFFFF;
+  padding: 44px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* Contenedor para Imagen o SVG en Slide Split con Texto */
+.slide-split .split-visual-card,
+.slide-split .visual-media-card {
+  width: 100%;
+  height: 100%;
+  background-color: var(--duoc-gray-card);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide-split .split-visual-card.bg-white,
+.slide-split .visual-media-card.bg-white {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+}
+
+.slide-split .split-visual-card img,
+.slide-split .split-visual-card svg,
+.slide-split .visual-media-card img,
+.slide-split .visual-media-card svg {
+  width: 100%;
+  height: 100%;
+  max-width: 90%;
+  max-height: 85%;
+  object-fit: contain;
+  display: block;
+}
+
+.slide-split .split-right-content {
+  width: 63%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.content-card-duoc {
+  background-color: var(--duoc-gray-card);
+  border-radius: 26px;
+  padding: 28px 36px;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.content-card-duoc h3 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+
+.content-card-duoc h3::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-color: var(--duoc-yellow);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.content-card-duoc ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.content-card-duoc li {
+  font-size: 20px;
+  color: var(--duoc-dark);
+  line-height: 1.45;
+  position: relative;
+  padding-left: 28px;
+  word-wrap: break-word;
+}
+
+.content-card-duoc li strong {
+  font-weight: 800;
+  color: var(--duoc-dark);
+}
+
+.content-card-duoc li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--duoc-yellow);
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   SLIDE 3 TARJETAS (Layout 25 - 2_INTERIOR 3)
+   Tarjetas generosas y equilibradas que llenan la altura de forma atractiva
+   ========================================================================== */
+.cards-3-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+  height: 100%;
+  padding-top: 5px;
+}
+
+.card-duoc-col {
+  background-color: var(--duoc-gray-card);
+  border-radius: 26px;
+  padding: 34px 36px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.card-duoc-col .card-yellow-tag {
+  width: 44px;
+  height: 10px;
+  background-color: var(--duoc-yellow);
+  border-radius: 5px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.card-duoc-col .card-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  margin-bottom: 14px;
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+
+.card-duoc-col .card-desc {
+  font-size: 20px;
+  color: #4a4e52;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.card-duoc-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.card-duoc-col li {
+  font-size: 19px;
+  color: var(--duoc-dark);
+  line-height: 1.45;
+  position: relative;
+  padding-left: 28px;
+  word-wrap: break-word;
+}
+
+.card-duoc-col li strong {
+  font-weight: 800;
+  color: var(--duoc-dark);
+}
+
+.card-duoc-col li::before {
+  content: '•';
+  position: absolute;
+  left: 2px;
+  color: var(--duoc-yellow);
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   SLIDE 4 ICONOS / FEATURES (Layout 16 - 1_INTERIOR 1)
+   ========================================================================== */
+.features-4-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 32px;
+  height: 100%;
+  padding-top: 5px;
+}
+
+.feature-item-duoc {
+  background-color: var(--duoc-gray-card);
+  border-radius: 26px;
+  padding: 38px 36px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.feature-item-duoc .icon-circle-yellow {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background-color: var(--duoc-yellow);
+  color: var(--duoc-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-item-duoc .icon-circle-yellow svg {
+  width: 44px;
+  height: 44px;
+  fill: currentColor;
+}
+
+.feature-item-duoc .feature-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.feature-item-duoc .feature-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  line-height: 1.25;
+  word-wrap: break-word;
+}
+
+.feature-item-duoc .feature-text {
+  font-size: 20px;
+  line-height: 1.55;
+  color: var(--duoc-dark);
+  word-wrap: break-word;
+}
+
+/* ==========================================================================
+   SLIDE 2 COMPARATIVAS
+   ========================================================================== */
+.cards-2-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 44px;
+  height: 100%;
+  padding-top: 5px;
+}
+
+.compare-card-duoc {
+  background-color: var(--duoc-gray-card);
+  border-radius: 28px;
+  padding: 44px 44px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.compare-card-duoc .compare-tag {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 9px 20px;
+  border-radius: 8px;
+  background-color: var(--duoc-yellow);
+  color: var(--duoc-dark);
+  font-size: 17px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 26px;
+}
+
+.compare-card-duoc .card-title {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  margin-bottom: 26px;
+  line-height: 1.25;
+}
+
+.compare-card-duoc ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+}
+
+.compare-card-duoc li {
+  font-size: 23px;
+  line-height: 1.65;
+  color: var(--duoc-dark);
+  position: relative;
+  padding-left: 36px;
+}
+
+.compare-card-duoc li strong {
+  font-weight: 800;
+  color: var(--duoc-dark);
+}
+
+.compare-card-duoc li::before {
+  content: '✔';
+  position: absolute;
+  left: 0;
+  color: var(--duoc-dark);
+  font-weight: bold;
+  font-size: 24px;
+}
+
+/* ==========================================================================
+   SLIDE KPIS Y MÉTRICAS
+   ========================================================================== */
+.kpi-grid-duoc {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+  margin-bottom: 34px;
+}
+
+.kpi-box-duoc {
+  background-color: var(--duoc-gray-card);
+  border-radius: 24px;
+  padding: 34px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.kpi-box-duoc .kpi-num {
+  font-family: var(--font-heading);
+  font-size: 68px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+.kpi-box-duoc .kpi-lbl {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--duoc-gray-text);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+
+.kpi-box-duoc .kpi-badge {
+  font-size: 18px;
+  font-weight: 900;
+  padding: 8px 18px;
+  border-radius: 50px;
+  background-color: var(--duoc-yellow);
+  color: var(--duoc-dark);
+}
+
+.wide-2-duoc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  height: calc(100% - 240px);
+}
+
+/* ==========================================================================
+   SLIDE CIERRE INSTITUCIONAL (Layout 26 - Cierre)
+   Réplica exacta del cierre de la plantilla base DUOC UC 2026
+   ========================================================================== */
+.slide-closing {
+  background-color: var(--duoc-gray-card);
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide-closing .closing-center-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-closing .closing-logo {
+  width: 445px;
+  height: 177px;
+  object-fit: contain;
+}
+
+.slide-closing .closing-bottom-group,
+.slide-closing .closing-bottom-content {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+}
+
+.slide-closing .closing-slogan-official,
+.slide-closing .closing-text-slogan {
+  font-family: var(--font-heading);
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slide-closing .closing-cna-banner,
+.slide-closing .closing-slogan-img {
+  width: 924px;
+  height: 145px;
+  object-fit: contain;
+}
+
+/* ==========================================================================
+   COMPONENTES PARA CAPTURAS DE PANTALLA Y EVIDENCIA REAL (LMS, SISTEMAS)
+   Permite mostrar capturas legibles sin romper la estética DUOC UC
+   ========================================================================== */
+.duoc-mockup-frame {
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 43, 73, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.duoc-mockup-frame .mockup-header {
+  height: 48px;
+  background: #F0F1F3;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.duoc-mockup-frame .mockup-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.duoc-mockup-frame .mockup-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #D1D5DB;
+}
+
+.duoc-mockup-frame .mockup-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--duoc-gray-text);
+  letter-spacing: 0.5px;
+}
+
+.duoc-mockup-frame .mockup-badge {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background-color: var(--duoc-yellow);
+  color: var(--duoc-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.duoc-mockup-frame .mockup-screen {
+  flex: 1;
+  background: #FFFFFF;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.duoc-mockup-frame .mockup-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: top center;
+  image-rendering: -webkit-optimize-contrast;
+  border-radius: 8px;
+}
+
+/* Layout Split para Captura de Pantalla + Análisis */
+.slide-split-ui .split-ui-wrapper {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 36px;
+  height: 100%;
+  align-items: stretch;
+}
+
+/* Layout Dual para Dos Capturas */
+.slide-dual-screenshots .dual-screen-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  height: 100%;
+}
+
+/* ==========================================================================
+   LAYOUT ESTRATÉGICO DE 5 TARJETAS (Inspirado en Plantilla Duoc Online)
+   4 tarjetas exteriores + 1 tarjeta central azul marino de alto impacto
+   ========================================================================== */
+.cards-5-strategic-container {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 24px;
+  height: calc(100% - 64px);
+  position: relative;
+}
+
+.strategic-corner-card {
+  background-color: var(--duoc-gray-card);
+  border-radius: 22px;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.strategic-corner-card .card-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  margin-bottom: 10px;
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+
+.strategic-corner-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.strategic-corner-card li {
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--duoc-dark);
+  position: relative;
+  padding-left: 22px;
+  word-wrap: break-word;
+}
+
+.strategic-corner-card li::before {
+  content: '•';
+  position: absolute;
+  left: 2px;
+  color: var(--duoc-dark);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.strategic-center-card {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  background-color: var(--duoc-gray-card); /* Mismo color institucional de tarjeta #E6E7E8 */
+  border-radius: 26px;
+  padding: 28px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border: 2px solid var(--duoc-yellow); /* Realce con amarillo institucional */
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.strategic-center-card .center-card-title {
+  font-family: var(--font-heading);
+  font-size: 25px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+  margin-bottom: 14px;
+  line-height: 1.25;
+  border-bottom: 4px solid var(--duoc-yellow);
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.strategic-center-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.strategic-center-card li {
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--duoc-dark);
+  position: relative;
+  padding-left: 26px;
+  word-wrap: break-word;
+}
+
+.strategic-center-card li strong {
+  color: var(--duoc-dark);
+  font-weight: 800;
+}
+
+.strategic-center-card li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--duoc-yellow);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.strategic-bottom-note {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--duoc-dark);
+  text-align: center;
+}
+
+.strategic-bottom-note .note-label {
+  color: var(--duoc-yellow);
+  background-color: var(--duoc-dark);
+  padding: 4px 14px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   SLIDES DE SOLO IMAGEN O SOLO SVG (FULL MEDIA SHOWCASE)
+   Para mostrar capturas completas o diagramas técnicos en su máxima visibilidad
+   ========================================================================== */
+.slide-full-media .full-media-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.slide-full-media .full-mockup-frame {
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px rgba(0, 43, 73, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.slide-full-media .full-mockup-frame .mockup-header {
+  height: 52px;
+  background: #F0F1F3;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.slide-full-media .full-mockup-frame .mockup-screen {
+  flex: 1;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  overflow: hidden;
+}
+
+.slide-full-media .full-mockup-frame .mockup-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Contenedor para Diagramas SVG Técnicos */
+/* Contenedor para Diagramas SVG, Vectores o Logos a Pantalla Completa */
+.slide-full-media .full-svg-container,
+.slide-full-media .full-media-showcase {
+  width: 100%;
+  height: 100%;
+  background-color: var(--duoc-gray-card);
+  border-radius: 26px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.slide-full-media .full-svg-container.bg-white,
+.slide-full-media .full-media-showcase.bg-white {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.05);
+}
+
+.slide-full-media .full-svg-container svg,
+.slide-full-media .full-svg-container img,
+.slide-full-media .full-media-showcase svg,
+.slide-full-media .full-media-showcase img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ==========================================================================
+   BADGES Y TARJETAS PARA TECNOLOGÍAS, CLOUD Y LOGOS SVG (Ej. AWS)
+   ========================================================================== */
+.tech-badge-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 20px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.tech-badge-card .tech-logo-wrap {
+  width: 90px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FAFAFA;
+  border-radius: 12px;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.tech-badge-card .tech-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.tech-badge-card .tech-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tech-badge-card .tech-name {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--duoc-dark);
+}
+
+.tech-badge-card .tech-role {
+  font-size: 16px;
+  color: var(--duoc-gray-text);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   CONTROLES DE PRESENTACIÓN
+   ========================================================================== */
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 6px;
+  background-color: var(--duoc-yellow);
+  width: 0%;
+  transition: width 0.3s ease;
+  z-index: 1000;
+}
+
+#toolbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(38, 38, 38, 0.92);
+  backdrop-filter: blur(12px);
+  padding: 8px 22px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+}
+
+#toolbar:hover {
+  opacity: 1;
+}
+
+.tool-btn {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 17px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#slide-counter {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #E2E8F0;
+}
+
+/* Overview modal */
+#overview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(38, 38, 38, 0.95);
+  backdrop-filter: blur(16px);
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  padding: 40px 60px;
+  overflow-y: auto;
+}
+
+#overview-overlay.active {
+  display: flex;
+}
+
+.overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #FFFFFF;
+  margin-bottom: 30px;
+}
+
+.overview-title {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.overview-thumb {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 18px;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--duoc-dark);
+}
+
+.overview-thumb:hover, .overview-thumb.current {
+  border-color: var(--duoc-yellow);
+  transform: translateY(-4px);
+}
+
+.thumb-num {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--duoc-yellow);
+}
+
+.thumb-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--duoc-dark);
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   PRINT STYLES (@media print)
+   ========================================================================== */
+@media print {
+  /* 1920×1080 = mismo lienzo que pantalla (sin reescalar contenido en px) */
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    width: 1920px !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #FFFFFF !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #deck-viewport {
+    width: 1920px !important;
+    height: auto !important;
+    display: block !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #slide-canvas {
+    width: 1920px !important;
+    height: auto !important;
+    min-width: 1920px !important;
+    min-height: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .slide {
+    display: block !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: 1920px !important;
+    height: 1080px !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .slide:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  #toolbar, #progress-bar, #overview-overlay {
+    display: none !important;
+  }
+}

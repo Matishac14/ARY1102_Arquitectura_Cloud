@@ -1,0 +1,5 @@
+bucket         = "freshbox-ep2-tfstate-ACCOUNT_ID"
+key            = "ep2/cloud-infrastructure/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "freshbox-ep2-tf-locks"
+encrypt        = true

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="100%" height="100%">
+  <rect width="960" height="540" fill="#F4F5F7"/>
+  <!-- Barra superior de sistema -->
+  <rect width="960" height="56" fill="#002B49"/>
+  <circle cx="28" cy="28" r="6" fill="#FF5F56"/>
+  <circle cx="48" cy="28" r="6" fill="#FFBD2E"/>
+  <circle cx="68" cy="28" r="6" fill="#27C93F"/>
+  <text x="110" y="34" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">Portal Institucional DUOC UC · Módulo de Gestión</text>
+  <rect x="760" y="16" width="170" height="26" rx="13" fill="#FFB71B"/>
+  <text x="845" y="33" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#002B49" text-anchor="middle">AMBIENTE ACTIVO</text>
+
+  <!-- Navegación lateral -->
+  <rect y="56" width="220" height="484" fill="#E6E7E8"/>
+  <rect x="20" y="80" width="180" height="34" rx="6" fill="#002B49"/>
+  <text x="40" y="102" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">📊 Panel Principal</text>
+  <rect x="20" y="125" width="180" height="34" rx="6" fill="#FFFFFF"/>
+  <text x="40" y="147" font-family="Arial, sans-serif" font-size="13" fill="#262626">📋 Cursos Asignados</text>
+  <rect x="20" y="170" width="180" height="34" rx="6" fill="#FFFFFF"/>
+  <text x="40" y="192" font-family="Arial, sans-serif" font-size="13" fill="#262626">👥 Estudiantes</text>
+  <rect x="20" y="215" width="180" height="34" rx="6" fill="#FFFFFF"/>
+  <text x="40" y="237" font-family="Arial, sans-serif" font-size="13" fill="#262626">⚙️ Configuración</text>
+
+  <!-- Contenido principal -->
+  <rect x="250" y="80" width="680" height="110" rx="10" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <text x="275" y="115" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#002B49">Resumen de Actividades del Período</text>
+  <text x="275" y="140" font-family="Arial, sans-serif" font-size="13" fill="#7F8083">Visualización consolidada de cumplimiento institucional y registros académicos.</text>
+  <rect x="275" y="155" width="130" height="22" rx="4" fill="#E8F5E9"/>
+  <text x="340" y="170" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#196B24" text-anchor="middle">✓ Sincronizado</text>
+
+  <!-- Tarjetas de métricas -->
+  <rect x="250" y="210" width="210" height="130" rx="10" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <text x="270" y="240" font-family="Arial, sans-serif" font-size="13" fill="#7F8083">Cursos Auditados</text>
+  <text x="270" y="285" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#002B49">1.482</text>
+  <text x="270" y="320" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#196B24">▲ 98.4% Meta</text>
+
+  <rect x="485" y="210" width="210" height="130" rx="10" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <text x="505" y="240" font-family="Arial, sans-serif" font-size="13" fill="#7F8083">Docentes Activos</text>
+  <text x="505" y="285" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#002B49">890</text>
+  <text x="505" y="320" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#196B24">▲ 100% Sincronizado</text>
+
+  <rect x="720" y="210" width="210" height="130" rx="10" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <text x="740" y="240" font-family="Arial, sans-serif" font-size="13" fill="#7F8083">Alertas Resueltas</text>
+  <text x="740" y="285" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#002B49">99.1%</text>
+  <text x="740" y="320" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#196B24">Tiempo prom: 4m</text>
+
+  <!-- Tabla o lista inferior -->
+  <rect x="250" y="360" width="680" height="150" rx="10" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <rect x="250" y="360" width="680" height="35" rx="10" fill="#F0F1F3"/>
+  <text x="275" y="383" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#262626">CÓDIGO</text>
+  <text x="400" y="383" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#262626">ASIGNATURA</text>
+  <text x="630" y="383" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#262626">DOCENTE</text>
+  <text x="830" y="383" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#262626">ESTADO</text>
+  
+  <text x="275" y="420" font-family="Arial, sans-serif" font-size="12" fill="#7F8083">INF-201</text>
+  <text x="400" y="420" font-family="Arial, sans-serif" font-size="12" fill="#262626">Ingeniería de Software II</text>
+  <text x="630" y="420" font-family="Arial, sans-serif" font-size="12" fill="#262626">Prof. M. Morales</text>
+  <rect x="825" y="407" width="80" height="18" rx="9" fill="#E8F5E9"/>
+  <text x="865" y="420" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#196B24" text-anchor="middle">APROBADO</text>
+
+  <text x="275" y="455" font-family="Arial, sans-serif" font-size="12" fill="#7F8083">MAT-105</text>
+  <text x="400" y="455" font-family="Arial, sans-serif" font-size="12" fill="#262626">Cálculo Aplicado</text>
+  <text x="630" y="455" font-family="Arial, sans-serif" font-size="12" fill="#262626">Prof. C. Soto</text>
+  <rect x="825" y="442" width="80" height="18" rx="9" fill="#E8F5E9"/>
+  <text x="865" y="455" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#196B24" text-anchor="middle">APROBADO</text>
+
+  <text x="275" y="490" font-family="Arial, sans-serif" font-size="12" fill="#7F8083">ADM-310</text>
+  <text x="400" y="490" font-family="Arial, sans-serif" font-size="12" fill="#262626">Gestión Estratégica</text>
+  <text x="630" y="490" font-family="Arial, sans-serif" font-size="12" fill="#262626">Prof. R. Silva</text>
+  <rect x="825" y="477" width="80" height="18" rx="9" fill="#FFF3D6"/>
+  <text x="865" y="490" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#B45309" text-anchor="middle">EN REVISIÓN</text>
+</svg>

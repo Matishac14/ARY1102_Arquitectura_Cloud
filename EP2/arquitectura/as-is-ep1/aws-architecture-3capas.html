@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FreshBox EP1 — Arquitectura 3 capas</title>
+<style>
+  :root { --ink:#232F3E; --muted:#545B64; --vpc:#8C4FFF; --pub:#248814; --priv:#147EBA; --asg:#ED7100; --sg:#DD344C; --warn:#F9A825; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Helvetica, Arial, sans-serif; color:var(--ink); background:#fafafa; }
+  header { padding:20px 28px 8px; }
+  h1 { margin:0; font-size:22px; }
+  p.sub { margin:6px 0 0; color:var(--muted); font-size:13px; }
+  #viewport { width:100%; max-width:1800px; margin:0 auto; padding:0 16px 32px; }
+  svg { width:100%; height:auto; background:#fff; border:1px solid #ddd; border-radius:8px; }
+  .legend { position:absolute; }
+  text { font-family: Helvetica, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<header>
+  <h1>FreshBox SpA — Arquitectura EP1 · 3 capas Multi-AZ</h1>
+  <p class="sub">ARY1102 · Learner Lab · us-east-1 · Vista alineada al Draw.io (iconos AWS4). Abrir <code>aws-architecture-3capas.drawio</code> en diagrams.net para edición.</p>
+</header>
+<div id="viewport">
+<svg id="scene" viewBox="0 0 1760 1180" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <!-- VPC -->
+  <rect x="40" y="60" width="1100" height="1040" rx="8" fill="#8C4FFF0D" stroke="#8C4FFF" stroke-width="2"/>
+  <text x="60" y="88" fill="#8C4FFF" font-size="14" font-weight="bold">VPC 10.0.0.0/22 · freshbox-ep1-vpc</text>
+
+  <!-- Layer strips -->
+  <rect x="70" y="110" width="1040" height="28" rx="4" fill="#E9F3D2"/><text x="590" y="129" text-anchor="middle" fill="#248814" font-size="12" font-weight="bold">CAPA 1 — PÚBLICA</text>
+  <rect x="70" y="390" width="1040" height="28" rx="4" fill="#E6F2F8"/><text x="590" y="409" text-anchor="middle" fill="#147EBA" font-size="12" font-weight="bold">CAPA 2 — PRIVADA APP</text>
+  <rect x="70" y="760" width="1040" height="28" rx="4" fill="#E6F2F8"/><text x="590" y="779" text-anchor="middle" fill="#147EBA" font-size="12" font-weight="bold">CAPA 3 — PRIVADA DATA</text>
+
+  <!-- AZs -->
+  <rect x="80" y="150" width="500" height="920" rx="6" fill="none" stroke="#007CBD" stroke-dasharray="8 4" stroke-width="1.5"/>
+  <text x="100" y="172" fill="#007CBD" font-size="12" font-weight="bold">AZ us-east-1a</text>
+  <rect x="600" y="150" width="500" height="920" rx="6" fill="none" stroke="#007CBD" stroke-dasharray="8 4" stroke-width="1.5"/>
+  <text x="620" y="172" fill="#007CBD" font-size="12" font-weight="bold">AZ us-east-1b</text>
+
+  <!-- Public boxes -->
+  <rect x="110" y="190" width="440" height="170" rx="6" fill="#2488140D" stroke="#248814"/>
+  <text x="130" y="212" fill="#248814" font-size="11" font-weight="bold">Public · 10.0.0.0/25</text>
+  <rect x="630" y="190" width="440" height="170" rx="6" fill="#2488140D" stroke="#248814"/>
+  <text x="650" y="212" fill="#248814" font-size="11" font-weight="bold">Public · 10.0.0.128/25</text>
+
+  <!-- App boxes -->
+  <rect x="110" y="440" width="440" height="280" rx="6" fill="#147EBA0D" stroke="#147EBA"/>
+  <text x="130" y="462" fill="#147EBA" font-size="11" font-weight="bold">Private App · 10.0.1.0/25</text>
+  <rect x="630" y="440" width="440" height="280" rx="6" fill="#147EBA0D" stroke="#147EBA"/>
+  <text x="650" y="462" fill="#147EBA" font-size="11" font-weight="bold">Private App · 10.0.1.128/25</text>
+  <rect x="150" y="490" width="360" height="200" rx="6" fill="#ED71000D" stroke="#ED7100"/>
+  <text x="170" y="512" fill="#ED7100" font-size="11" font-weight="bold">ASG min2 / max4</text>
+  <rect x="670" y="490" width="360" height="200" rx="6" fill="#ED71000D" stroke="#ED7100"/>
+  <text x="690" y="512" fill="#ED7100" font-size="11" font-weight="bold">ASG min2 / max4</text>
+
+  <!-- Data boxes -->
+  <rect x="110" y="810" width="440" height="230" rx="6" fill="#147EBA0D" stroke="#147EBA"/>
+  <text x="130" y="832" fill="#147EBA" font-size="11" font-weight="bold">Private Data · 10.0.2.0/25</text>
+  <rect x="630" y="810" width="440" height="230" rx="6" fill="#147EBA0D" stroke="#147EBA"/>
+  <text x="650" y="832" fill="#147EBA" font-size="11" font-weight="bold">Private Data · 10.0.2.128/25</text>
+  <text x="850" y="930" text-anchor="middle" fill="#545B64" font-size="11" font-style="italic">Reservada Multi-AZ (lab: sin réplica)</text>
+
+  <!-- Service nodes (simplified squares + labels) -->
+  <g id="nodes">
+    <rect x="520" y="10" width="100" height="36" rx="6" fill="#F5F5F5" stroke="#666"/><text x="570" y="33" text-anchor="middle" font-size="11" font-weight="bold">Usuarios</text>
+
+    <rect x="160" y="240" width="100" height="70" rx="6" fill="#EDE7F6" stroke="#8C4FFF"/><text x="210" y="270" text-anchor="middle" font-size="11" font-weight="bold">ALB :80</text><text x="210" y="288" text-anchor="middle" font-size="9" fill="#545B64">sg-alb</text>
+    <rect x="320" y="230" width="100" height="50" rx="6" fill="#EDE7F6" stroke="#8C4FFF"/><text x="370" y="260" text-anchor="middle" font-size="11" font-weight="bold">NAT</text>
+    <rect x="320" y="295" width="100" height="50" rx="6" fill="#EDE7F6" stroke="#8C4FFF"/><text x="370" y="325" text-anchor="middle" font-size="11" font-weight="bold">IGW</text>
+    <rect x="790" y="250" width="110" height="50" rx="6" fill="#EDE7F6" stroke="#8C4FFF"/><text x="845" y="280" text-anchor="middle" font-size="11" font-weight="bold">ALB ENI</text>
+
+    <rect x="230" y="560" width="140" height="70" rx="6" fill="#FFF2E8" stroke="#ED7100"/><text x="300" y="590" text-anchor="middle" font-size="11" font-weight="bold">EC2 App</text><text x="300" y="608" text-anchor="middle" font-size="9" fill="#545B64">Docker ×5</text>
+    <rect x="750" y="560" width="140" height="70" rx="6" fill="#FFF2E8" stroke="#ED7100"/><text x="820" y="590" text-anchor="middle" font-size="11" font-weight="bold">EC2 App</text><text x="820" y="608" text-anchor="middle" font-size="9" fill="#545B64">Docker ×5</text>
+
+    <rect x="230" y="880" width="150" height="70" rx="6" fill="#F5E6F7" stroke="#C925D1"/><text x="305" y="910" text-anchor="middle" font-size="11" font-weight="bold">EC2 MariaDB</text><text x="305" y="928" text-anchor="middle" font-size="9" fill="#545B64">:3306 · sg-data</text>
+  </g>
+
+  <!-- Shared -->
+  <rect x="1180" y="150" width="220" height="420" rx="8" fill="#F7F7F7" stroke="#545B64"/>
+  <text x="1290" y="178" text-anchor="middle" font-size="12" font-weight="bold">Compartidos</text>
+  <rect x="1220" y="200" width="140" height="50" rx="6" fill="#FFF2E8" stroke="#ED7100"/><text x="1290" y="230" text-anchor="middle" font-size="11" font-weight="bold">ECR ×5</text>
+  <rect x="1220" y="280" width="140" height="50" rx="6" fill="#E8F5E9" stroke="#3F8624"/><text x="1290" y="310" text-anchor="middle" font-size="11" font-weight="bold">AWS Backup</text>
+  <rect x="1220" y="360" width="140" height="50" rx="6" fill="#E8F5E9" stroke="#3F8624"/><text x="1290" y="390" text-anchor="middle" font-size="11" font-weight="bold">S3 tfstate</text>
+  <rect x="1220" y="440" width="140" height="50" rx="6" fill="#F5E6F7" stroke="#C925D1"/><text x="1290" y="470" text-anchor="middle" font-size="11" font-weight="bold">DynamoDB</text>
+
+  <!-- Flows (no labels on paths) -->
+  <g stroke="#545B64" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow)">
+    <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#545B64"/></marker></defs>
+    <path d="M570 46 L570 100 L210 100 L210 240"/>
+    <path d="M210 310 L210 560"/>
+    <path d="M845 300 L845 560"/>
+    <path d="M300 630 L300 880"/>
+    <path d="M750 630 L750 700 L380 700 L380 880"/>
+    <path d="M230 595 L180 595 L180 255 L320 255"/>
+    <path d="M750 595 L700 595 L700 420 L420 420 L420 255"/>
+    <path d="M370 280 L370 295"/>
+    <path d="M370 630 L1290 630 L1290 250"/>
+    <path d="M820 630 L1290 630 L1290 230"/>
+    <path d="M380 915 L1290 915 L1290 305"/>
+  </g>
+
+  <!-- Side legend -->
+  <rect x="1430" y="150" width="300" height="700" rx="8" fill="#fff" stroke="#545B64"/>
+  <text x="1450" y="180" font-size="13" font-weight="bold">Leyenda de flujos</text>
+  <text x="1450" y="205" font-size="10" fill="#545B64">(texto fuera de flechas)</text>
+  <text x="1450" y="240" font-size="11">1. Usuario → ALB · HTTP :80</text>
+  <text x="1450" y="262" font-size="11">2. ALB → EC2 App · HTTP :80</text>
+  <text x="1450" y="284" font-size="11">3. EC2 → MariaDB · TCP :3306</text>
+  <text x="1450" y="306" font-size="11">4. EC2 → NAT → IGW · egress</text>
+  <text x="1450" y="328" font-size="11">5. EC2 → ECR · docker pull</text>
+  <text x="1450" y="350" font-size="11">6. MariaDB → AWS Backup</text>
+  <text x="1450" y="390" font-size="12" font-weight="bold">Security Groups</text>
+  <text x="1450" y="412" font-size="11">sg-alb: 80 ← Internet</text>
+  <text x="1450" y="434" font-size="11">sg-app: 80 ← sg-alb</text>
+  <text x="1450" y="456" font-size="11">sg-data: 3306 ← sg-app</text>
+  <rect x="1450" y="500" width="260" height="90" rx="6" fill="#FFF3CD" stroke="#F9A825"/>
+  <text x="1465" y="525" font-size="11" font-weight="bold">VALIDATION</text>
+  <text x="1465" y="545" font-size="10">· NAT ×1 (no HA)</text>
+  <text x="1465" y="562" font-size="10">· ALB sin HTTPS</text>
+  <text x="1465" y="579" font-size="10">· BD Single-AZ (SPOF lab)</text>
+  <text x="1450" y="630" font-size="11" font-weight="bold">TO-BE (no implementado)</text>
+  <text x="1450" y="652" font-size="11">ECS/Fargate + RDS Multi-AZ</text>
+</svg>
+</div>
+</body>
+</html>

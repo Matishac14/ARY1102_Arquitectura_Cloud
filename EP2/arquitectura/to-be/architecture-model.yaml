@@ -1,0 +1,180 @@
+# FreshBox EP2 TO-BE — fuente de verdad (Terraform + lab Academy)
+# Skill: aws-architecture-diagrams-studio
+metadata:
+  title: "FreshBox SpA — Arquitectura TO-BE EP2 · EKS + RDS Multi-AZ"
+  environment: "clases"
+  region: "us-east-1"
+  project: "freshbox-ep2"
+  cluster: "freshbox-cluster"
+  status: "implemented"
+  generated_at: "2026-10-29"
+  source: "EP2/01-cloud-infrastructure (Terraform) + deploy_application=true"
+
+assumptions:
+  - id: A1
+    text: "ALB lo crea AWS Load Balancer Controller (Ingress); no es aws_lb de Terraform."
+    status: confirmed
+  - id: A2
+    text: "NAT Gateway unico en us-east-1a (SPOF de salida) — confirmado en routing module."
+    status: confirmed
+  - id: A3
+    text: "Replicas de app en lab = 1 (HPA min 1); enunciado sugiere ~2 — capacidad t4g.small maxPods=11."
+    status: confirmed
+  - id: A4
+    text: "AZ us-east-1a / us-east-1b mapeadas a subnets public/app/data del tfvars."
+    status: confirmed
+
+vpc:
+  id: "vpc-freshbox-ep2"
+  cidr: "10.20.0.0/22"
+  azs: ["us-east-1a", "us-east-1b"]
+
+subnets:
+  - id: pub-a
+    cidr: "10.20.0.0/25"
+    az: "us-east-1a"
+    tier: public
+  - id: pub-b
+    cidr: "10.20.0.128/25"
+    az: "us-east-1b"
+    tier: public
+  - id: app-a
+    cidr: "10.20.1.0/25"
+    az: "us-east-1a"
+    tier: private_app
+  - id: app-b
+    cidr: "10.20.1.128/25"
+    az: "us-east-1b"
+    tier: private_app
+  - id: data-a
+    cidr: "10.20.2.0/25"
+    az: "us-east-1a"
+    tier: private_data
+  - id: data-b
+    cidr: "10.20.2.128/25"
+    az: "us-east-1b"
+    tier: private_data
+
+components:
+  - id: users
+    type: actor
+    name: "Usuarios"
+    layer: external
+    status: confirmed
+  - id: igw
+    type: internet_gateway
+    name: "Internet Gateway"
+    layer: perimeter
+    status: confirmed
+  - id: alb
+    type: application_load_balancer
+    name: "ALB Ingress :80"
+    layer: public
+    note: "Creado por Ingress Controller"
+    status: confirmed
+  - id: nat
+    type: nat_gateway
+    name: "NAT Gateway"
+    az: "us-east-1a"
+    layer: public
+    status: confirmed
+  - id: eks
+    type: eks
+    name: "EKS freshbox-cluster"
+    layer: app
+    note: "k8s 1.34 · Node Group t4g.small min2/max4"
+    status: confirmed
+  - id: pods
+    type: workloads
+    name: "5 Deployments + HPA"
+    layer: app
+    note: "frontend + 4 APIs Node.js · namespace freshbox"
+    status: confirmed
+  - id: rds
+    type: rds
+    name: "RDS MySQL Multi-AZ"
+    layer: data
+    note: "db.t4g.small · encrypted · backup 7d"
+    status: confirmed
+  - id: ecr
+    type: ecr
+    name: "Amazon ECR"
+    layer: shared
+    note: "5 repos ARM64"
+    status: confirmed
+  - id: cw
+    type: cloudwatch
+    name: "CloudWatch Container Insights"
+    layer: shared
+    status: confirmed
+
+security_groups:
+  - id: sg-alb
+    name: "sg-alb"
+    ingress: "80/443 desde 0.0.0.0/0"
+    status: confirmed
+  - id: sg-eks
+    name: "sg-eks-node"
+    ingress: "desde sg-alb (pods target-type ip)"
+    status: confirmed
+  - id: sg-rds
+    name: "sg-rds"
+    ingress: "3306 desde sg-eks"
+    status: confirmed
+
+flows:
+  - id: f1
+    source: users
+    target: alb
+    protocol: HTTP
+    port: 80
+    purpose: "CRUD UI /api/products"
+    status: confirmed
+  - id: f2
+    source: alb
+    target: pods
+    protocol: HTTP
+    port: "pod ports"
+    purpose: "Ingress → Service frontend → nginx → backends"
+    status: confirmed
+  - id: f3
+    source: pods
+    target: rds
+    protocol: MySQL
+    port: 3306
+    purpose: "CRUD productos"
+    status: confirmed
+  - id: f4
+    source: pods
+    target: nat
+    protocol: HTTPS
+    port: 443
+    purpose: "Pull ECR / egress"
+    status: inferred
+  - id: f5
+    source: ecr
+    target: pods
+    protocol: HTTPS
+    port: 443
+    purpose: "Imagenes Docker ARM64"
+    status: confirmed
+
+validation:
+  - id: W1
+    severity: warning
+    text: "NAT Gateway unico → SPOF de salida a Internet (no Multi-AZ)."
+  - id: W2
+    severity: info
+    text: "ALB no esta en Terraform; aparece al aplicar Ingress (deploy_application=true)."
+  - id: W3
+    severity: info
+    text: "Replicas base=1 en lab (capacidad maxPods); HPA puede escalar hasta 4."
+  - id: OK1
+    severity: ok
+    text: "RDS Multi-AZ + cifrado + backup 7d CONFIRMADO."
+  - id: OK2
+    severity: ok
+    text: "EBS nodos encrypted=true CONFIRMADO."
+  - id: OK3
+    severity: ok
+    text: "SG encadenados Internet→ALB→EKS→RDS CONFIRMADO."
